@@ -1,0 +1,16 @@
+# .dockerignore
+.dockerignore
+.env
+.git
+.gitignore
+.idea
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+alembic.ini
+README.md
+tests/
