@@ -180,3 +180,6 @@ docker-compose.override.yml
 *.tmp
 *.temp
 *~
+
+# UV
+uv.lock
