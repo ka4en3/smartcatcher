@@ -1,0 +1,100 @@
+smartcatcher
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   ├── database.py
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── user.py
+│   │   │   ├── product.py
+│   │   │   ├── subscription.py
+│   │   │   └── notification.py
+│   │   ├── schemas/
+│   │   │   ├── __init__.py
+│   │   │   ├── user.py
+│   │   │   ├── product.py
+│   │   │   ├── subscription.py
+│   │   │   └── auth.py
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   ├── deps.py
+│   │   │   └── v1/
+│   │   │       ├── __init__.py
+│   │   │       ├── auth.py
+│   │   │       ├── users.py
+│   │   │       ├── products.py
+│   │   │       └── subscriptions.py
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   ├── security.py
+│   │   │   └── exceptions.py
+│   │   ├── services/
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py
+│   │   │   ├── user.py
+│   │   │   ├── product.py
+│   │   │   ├── subscription.py
+│   │   │   └── notification.py
+│   │   └── scrapers/
+│   │       ├── __init__.py
+│   │       ├── base.py
+│   │       ├── demo.py
+│   │       ├── webscraper_io.py
+│   │       ├── ebay.py
+│   │       └── etsy.py
+│   ├── alembic/
+│   │   ├── versions/
+│   │   ├── env.py
+│   │   ├── script.py.mako
+│   │   └── alembic.ini
+│   └── Dockerfile
+├── bot/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── handlers/
+│   │   ├── __init__.py
+│   │   ├── start.py
+│   │   ├── subscription.py
+│   │   └── notifications.py
+│   ├── middlewares/
+│   │   ├── __init__.py
+│   │   └── auth.py
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   └── api_client.py
+│   └── Dockerfile
+├── worker/
+│   ├── __init__.py
+│   ├── celery_app.py
+│   ├── tasks/
+│   │   ├── __init__.py
+│   │   ├── scraper.py
+│   │   └── notifications.py
+│   └── Dockerfile
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── test_auth.py
+│   ├── test_products.py
+│   ├── test_subscriptions.py
+│   ├── test_scrapers.py
+│   └── integration/
+│       ├── __init__.py
+│       ├── test_api.py
+│       └── test_bot.py
+├── examples/
+│   └── sample_product_page.html
+├── docker-compose.yml
+├── pyproject.toml
+├── .env.example
+├── .gitignore
+├── .pre-commit-config.yaml
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── README.md
+├── CHANGELOG.md
+├── LICENSE
+└── Makefile
