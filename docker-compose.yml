@@ -1,0 +1,114 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: smartcatcher_postgres
+    environment:
+      POSTGRES_DB: smartcatcher
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: smartcatcher_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    container_name: smartcatcher_backend
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-jwt-key-here-change-in-production}
+      - EBAY_CLIENT_ID=${EBAY_CLIENT_ID}
+      - EBAY_CLIENT_SECRET=${EBAY_CLIENT_SECRET}
+      - ETSY_API_KEY=${ETSY_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+#  worker:
+#    build:
+#      context: .
+#      dockerfile: ./worker/Dockerfile
+#    container_name: smartcatcher_worker
+#    environment:
+#      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
+#      - REDIS_URL=redis://redis:6379
+#      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecretjwtkey}
+#      - EBAY_CLIENT_ID=${EBAY_CLIENT_ID}
+#      - EBAY_CLIENT_SECRET=${EBAY_CLIENT_SECRET}
+#      - ETSY_API_KEY=${ETSY_API_KEY}
+#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
+#    volumes:
+#      - ./worker:/app
+#      - ./backend:/backend
+#    command: celery -A celery_app worker --loglevel=info
+
+#  scheduler:
+#    build:
+#      context: .
+#      dockerfile: ./worker/Dockerfile
+#    container_name: smartcatcher_scheduler
+#    environment:
+#      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
+#      - REDIS_URL=redis://redis:6379
+#      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecretjwtkey}
+#      - EBAY_CLIENT_ID=${EBAY_CLIENT_ID}
+#      - EBAY_CLIENT_SECRET=${EBAY_CLIENT_SECRET}
+#      - ETSY_API_KEY=${ETSY_API_KEY}
+#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#      redis:
+#        condition: service_healthy
+#    volumes:
+#      - ./worker:/app
+#      - ./backend:/backend
+#    command: celery -A celery_app beat --loglevel=info
+
+#  bot:
+#    build:
+#      context: .
+#      dockerfile: ./bot/Dockerfile
+#    container_name: smartcatcher_bot
+#    environment:
+#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+#      - BACKEND_URL=http://backend:8000
+#    depends_on:
+#      - backend
+#    volumes:
+#      - ./bot:/app
+
+volumes:
+  postgres_data:

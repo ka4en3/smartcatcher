@@ -1,135 +1,115 @@
-# Makefile
+.PHONY: help install dev test lint format clean build up down logs shell migrate
 
-.PHONY: help build up down logs shell test lint format clean dev install migration upgrade
+# Default target
+help:
+	@echo "SmartCatcher - Development Commands"
+	@echo ""
+	@echo "Setup:"
+	@echo "  install     Install dependencies with UV"
+	@echo "  dev         Install dev dependencies"
+	@echo ""
+	@echo "Development:"
+	@echo "  up          Start all services with docker-compose"
+	@echo "  down        Stop all services"
+	@echo "  logs        Show logs for all services"
+	@echo "  shell       Open shell in backend container"
+	@echo ""
+	@echo "Database:"
+	@echo "  migrate     Run database migrations"
+	@echo "  reset-db    Reset database (WARNING: destroys data)"
+	@echo ""
+	@echo "Code Quality:"
+	@echo "  test        Run all tests"
+	@echo "  test-cov    Run tests with coverage report"
+	@echo "  lint        Run linting (ruff)"
+	@echo "  format      Format code (black + isort)"
+	@echo "  type-check  Run mypy type checking"
+	@echo ""
+	@echo "Docker:"
+	@echo "  build       Build all Docker images"
+	@echo "  clean       Clean up Docker resources"
 
-help: ## Show this help message
-	@echo "Available commands:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+# Installation
+install:
+	uv sync
 
-install: ## Install dependencies using uv
-	@echo "Installing dependencies..."
-	uv venv
-	uv pip install -e ".[dev]"
+dev: install
+	uv sync --dev
 	pre-commit install
 
-dev: ## Start development environment
-	@echo "Starting development environment..."
-	docker-compose up --build -d
+# Development
+up:
+	docker-compose up --build
 
-build: ## Build all Docker images
-	@echo "Building Docker images..."
-	docker-compose build
-
-up: ## Start all services
-	@echo "Starting all services..."
-	docker-compose up -d
-
-down: ## Stop all services
-	@echo "Stopping all services..."
+down:
 	docker-compose down
 
-logs: ## Show logs from all services
+logs:
 	docker-compose logs -f
 
-logs-backend: ## Show backend logs
-	docker-compose logs -f backend
+shell:
+	docker-compose exec backend bash
 
-logs-worker: ## Show worker logs
-	docker-compose logs -f worker
+# Database
+migrate:
+	docker-compose exec backend alembic upgrade head
 
-logs-bot: ## Show bot logs
-	docker-compose logs -f bot
+reset-db:
+	docker-compose down -v
+	docker-compose up -d postgres
+	sleep 5
+	docker-compose exec backend alembic upgrade head
 
-shell-backend: ## Open shell in backend container
-	docker-compose exec backend /bin/bash
+# Code quality
+test:
+	pytest
 
-shell-worker: ## Open shell in worker container
-	docker-compose exec worker /bin/bash
+test-cov:
+	pytest --cov=backend --cov=bot --cov=worker --cov-report=html --cov-report=term
 
-shell-postgres: ## Open PostgreSQL shell
-	docker-compose exec postgres psql -U smartcatcher -d smartcatcher
-
-test: ## Run tests
-	@echo "Running tests..."
-	pytest --cov=app --cov=bot --cov=worker --cov-report=term-missing
-
-test-unit: ## Run unit tests only
-	@echo "Running unit tests..."
-	pytest tests/ -v --ignore=tests/integration/
-
-test-integration: ## Run integration tests only
-	@echo "Running integration tests..."
-	pytest tests/integration/ -v
-
-coverage: ## Generate coverage report
-	@echo "Generating coverage report..."
-	pytest --cov=app --cov=bot --cov=worker --cov-report=html
-	@echo "Coverage report generated in htmlcov/"
-
-lint: ## Run linters
-	@echo "Running linters..."
+lint:
 	ruff check .
-	black --check .
-	isort --check-only .
-	mypy app/ bot/ worker/
+	mypy backend bot worker
 
-format: ## Format code
-	@echo "Formatting code..."
+format:
 	black .
 	isort .
 	ruff check --fix .
 
-migration: ## Create new migration
-	@echo "Creating new migration..."
-	@read -p "Enter migration message: " msg; \
-	docker-compose exec backend alembic revision --autogenerate -m "$$msg"
+type-check:
+	mypy backend bot worker
 
-upgrade: ## Apply migrations
-	@echo "Applying migrations..."
-	docker-compose exec backend alembic upgrade head
+# Docker
+build:
+	docker-compose build --no-cache
 
-downgrade: ## Rollback last migration
-	@echo "Rolling back last migration..."
-	docker-compose exec backend alembic downgrade -1
-
-seed: ## Seed database with test data
-	@echo "Seeding database..."
-	docker-compose exec backend python -m app.seeds.initial_data
-
-clean: ## Clean up containers and volumes
-	@echo "Cleaning up..."
-	docker-compose down -v --remove-orphans
+clean:
 	docker system prune -f
+	docker volume prune -f
 
-clean-all: ## Clean everything including images
-	@echo "Cleaning everything..."
-	docker-compose down -v --remove-orphans --rmi all
-	docker system prune -af
+# Production
+prod-up:
+	docker-compose -f docker-compose.prod.yml up -d --build
 
-restart: ## Restart all services
-	@echo "Restarting services..."
-	docker-compose restart
+prod-down:
+	docker-compose -f docker-compose.prod.yml down
 
-restart-backend: ## Restart backend service
-	docker-compose restart backend
+# Utility
+check-env:
+	@echo "Checking environment variables..."
+	@test -f .env || (echo "Error: .env file not found. Copy .env.example to .env" && exit 1)
+	@echo "✅ Environment file found"
 
-restart-worker: ## Restart worker service
-	docker-compose restart worker
-
-restart-bot: ## Restart bot service
-	docker-compose restart bot
-
-healthcheck: ## Check health of all services
-	@echo "Checking service health..."
-	@docker-compose ps
-	@echo "\nBackend health:"
-	@curl -s http://localhost:8000/health || echo "Backend not healthy"
-	@echo "\nRedis health:"
-	@docker-compose exec redis redis-cli ping || echo "Redis not healthy"
-	@echo "\nPostgreSQL health:"
-	@docker-compose exec postgres pg_isready -U smartcatcher || echo "PostgreSQL not healthy"
-
-production: ## Deploy to production
-	@echo "Deploying to production..."
-	@echo "Make sure to set ENVIRONMENT=production in .env"
-	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+setup: check-env dev
+	@echo "🚀 Setting up SmartCatcher development environment..."
+	@echo "1. Installing dependencies..."
+	@make install
+	@echo "2. Setting up pre-commit hooks..."
+	@pre-commit install
+	@echo "3. Starting services..."
+	@make up
+	@echo "✅ Setup complete! Services are starting up..."
+	@echo "   - Backend API: http://localhost:8000"
+	@echo "   - API Docs: http://localhost:8000/docs"
+	@echo "   - PostgreSQL: localhost:5432"
+	@echo "   - Redis: localhost:6379"

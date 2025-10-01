@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Product - SmartCatcher Sample</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .product-container { display: flex; gap: 30px; }
+        .product-image { max-width: 300px; }
+        .product-details { flex: 1; }
+        .product-title { font-size: 24px; margin-bottom: 10px; }
+        .product-brand { color: #666; margin-bottom: 15px; }
+        .product-price { font-size: 28px; color: #e47911; font-weight: bold; margin-bottom: 20px; }
+        .description { line-height: 1.6; margin-bottom: 20px; }
+        .buy-button { background-color: #ff9900; color: white; padding: 10px 30px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
+        .buy-button:hover { background-color: #e88900; }
+    </style>
+</head>
+<body>
+    <div class="product-container">
+        <div class="product-image-section">
+            <img src="https://via.placeholder.com/300x300/007bff/ffffff?text=Demo+Product" 
+                 alt="Demo Smart Watch" 
+                 class="product-image main-image">
+        </div>
+        
+        <div class="product-details">
+            <h1 class="product-title">Smart Fitness Watch Pro</h1>
+            <div class="product-brand brand">TechGear</div>
+            <div class="product-price price">$149.99</div>
+            
+            <div class="description">
+                <h3>Product Description</h3>
+                <p>This is a demonstration product page for SmartCatcher's demo scraper. 
+                   The Smart Fitness Watch Pro features advanced health monitoring, 
+                   GPS tracking, and 7-day battery life. Perfect for fitness enthusiasts 
+                   and tech lovers alike.</p>
+                
+                <ul>
+                    <li>Heart rate monitoring</li>
+                    <li>GPS and GLONASS support</li>
+                    <li>Water resistant up to 50m</li>
+                    <li>7-day battery life</li>
+                    <li>Compatible with iOS and Android</li>
+                </ul>
+            </div>
+            
+            <div class="product-specs">
+                <h3>Specifications</h3>
+                <table>
+                    <tr><td><strong>Display:</strong></td><td>1.4" AMOLED</td></tr>
+                    <tr><td><strong>Battery:</strong></td><td>300mAh Li-ion</td></tr>
+                    <tr><td><strong>Connectivity:</strong></td><td>Bluetooth 5.0, WiFi</td></tr>
+                    <tr><td><strong>Weight:</strong></td><td>45g</td></tr>
+                </table>
+            </div>
+            
+            <button class="buy-button">Add to Cart</button>
+        </div>
+    </div>
+    
+    <!-- Additional product data for scraper testing -->
+    <div style="display: none;">
+        <span class="availability">In Stock</span>
+        <span class="sku">SKU: DEMO-WATCH-001</span>
+        <span class="category">Electronics > Wearables > Smart Watches</span>
+    </div>
+</body>
+</html>
