@@ -32,6 +32,8 @@ services:
       context: .
       dockerfile: ./backend/Dockerfile
     container_name: smartcatcher_backend
+    env_file:
+      - .env.test
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
       - REDIS_URL=redis://redis:6379
@@ -51,64 +53,70 @@ services:
       - ./backend:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-#  worker:
-#    build:
-#      context: .
-#      dockerfile: ./worker/Dockerfile
-#    container_name: smartcatcher_worker
-#    environment:
-#      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
-#      - REDIS_URL=redis://redis:6379
-#      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecretjwtkey}
-#      - EBAY_CLIENT_ID=${EBAY_CLIENT_ID}
-#      - EBAY_CLIENT_SECRET=${EBAY_CLIENT_SECRET}
-#      - ETSY_API_KEY=${ETSY_API_KEY}
-#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-#    depends_on:
-#      postgres:
-#        condition: service_healthy
-#      redis:
-#        condition: service_healthy
-#    volumes:
-#      - ./worker:/app
-#      - ./backend:/backend
-#    command: celery -A celery_app worker --loglevel=info
+  worker:
+    build:
+      context: .
+      dockerfile: ./worker/Dockerfile
+    container_name: smartcatcher_worker
+    env_file:
+      - .env.test
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecretjwtkey}
+      - EBAY_CLIENT_ID=${EBAY_CLIENT_ID}
+      - EBAY_CLIENT_SECRET=${EBAY_CLIENT_SECRET}
+      - ETSY_API_KEY=${ETSY_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./worker:/app
+      - ./backend:/backend
+    command: celery -A celery_app worker --loglevel=info
 
-#  scheduler:
-#    build:
-#      context: .
-#      dockerfile: ./worker/Dockerfile
-#    container_name: smartcatcher_scheduler
-#    environment:
-#      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
-#      - REDIS_URL=redis://redis:6379
-#      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecretjwtkey}
-#      - EBAY_CLIENT_ID=${EBAY_CLIENT_ID}
-#      - EBAY_CLIENT_SECRET=${EBAY_CLIENT_SECRET}
-#      - ETSY_API_KEY=${ETSY_API_KEY}
-#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-#    depends_on:
-#      postgres:
-#        condition: service_healthy
-#      redis:
-#        condition: service_healthy
-#    volumes:
-#      - ./worker:/app
-#      - ./backend:/backend
-#    command: celery -A celery_app beat --loglevel=info
+  scheduler:
+    build:
+      context: .
+      dockerfile: ./worker/Dockerfile
+    container_name: smartcatcher_scheduler
+    env_file:
+      - .env.test
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecretjwtkey}
+      - EBAY_CLIENT_ID=${EBAY_CLIENT_ID}
+      - EBAY_CLIENT_SECRET=${EBAY_CLIENT_SECRET}
+      - ETSY_API_KEY=${ETSY_API_KEY}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./worker:/app
+      - ./backend:/backend
+    command: celery -A celery_app beat --loglevel=info
 
-#  bot:
-#    build:
-#      context: .
-#      dockerfile: ./bot/Dockerfile
-#    container_name: smartcatcher_bot
-#    environment:
-#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-#      - BACKEND_URL=http://backend:8000
-#    depends_on:
-#      - backend
-#    volumes:
-#      - ./bot:/app
+  bot:
+    build:
+      context: .
+      dockerfile: ./bot/Dockerfile
+    container_name: smartcatcher_bot
+    env_file:
+      - .env.test
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./bot:/app
 
 volumes:
   postgres_data:
