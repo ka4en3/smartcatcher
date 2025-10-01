@@ -14,9 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlmodel import SQLModel
 
 # Set test environment
-os.environ["DATABASE_URL"] = "postgresql://postgres:postgres@localhost:5432/smartcatcher_test"
-os.environ["REDIS_URL"] = "redis://localhost:6379/1"
-os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only-not-secure"
+# os.environ["DATABASE_URL"] = "postgresql://postgres:postgres@localhost:5432/smartcatcher_test"
+# os.environ["REDIS_URL"] = "redis://localhost:6379/1"
+# os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only-not-secure"
 
 from app.config import get_settings
 from app.database import get_session

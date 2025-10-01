@@ -17,7 +17,7 @@ async def get_current_user_profile(
     current_user: User = Depends(get_current_active_user),
 ) -> UserRead:
     """Get current user profile."""
-    return UserRead.from_orm(current_user)
+    return UserRead.model_validate(current_user, from_attributes=True)
 
 
 @router.patch("/me", response_model=UserRead)
@@ -29,4 +29,4 @@ async def update_current_user_profile(
     """Update current user profile."""
     user_service = UserService(session)
     updated_user = await user_service.update(current_user.id, user_update)
-    return UserRead.from_orm(updated_user)
+    return UserRead.model_validate(updated_user, from_attributes=True)

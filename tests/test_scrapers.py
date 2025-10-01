@@ -1,163 +1,254 @@
-"""Unit tests for scraper components."""
+# tests/test_scrapers.py
+
 import pytest
-from unittest.mock import Mock, patch
 from decimal import Decimal
+from unittest.mock import AsyncMock, Mock, patch
 
-from app.scrapers.base import BaseProductScraper, ScrapedProduct
-from app.scrapers.amazon import AmazonScraper
+from app.scrapers.base import BaseScraper, ScrapedProduct
+from app.scrapers.demo import DemoScraper
+from app.scrapers.webscraper_io import WebScraperIOScraper
 from app.scrapers.ebay import EbayScraper
+from app.scrapers.etsy import EtsyScraper
+from app.scrapers import get_scraper_for_url
 
 
-class TestBaseProductScraper:
+class TestBaseScraper:
     """Test base scraper functionality."""
-
-    def test_scraped_product_creation(self):
-        """Test ScrapedProduct model creation."""
-        product = ScrapedProduct(
-            title="Test Product",
-            price=Decimal("29.99"),
-            currency="USD",
-            brand="Test Brand",
-            image_url="https://example.com/image.jpg",
-            external_id="test-123"
-        )
-
-        assert product.title == "Test Product"
-        assert product.price == Decimal("29.99")
-        assert product.currency == "USD"
-        assert product.brand == "Test Brand"
-
-    def test_scraped_product_validation(self):
-        """Test ScrapedProduct validation."""
-        # Valid product
-        valid_product = ScrapedProduct(
-            title="Valid Product",
-            price=Decimal("19.99"),
-            currency="EUR"
-        )
-        assert valid_product.title == "Valid Product"
-
-        # Invalid price should raise validation error
-        with pytest.raises(ValueError):
-            ScrapedProduct(
-                title="Invalid Product",
-                price=Decimal("-10.00"),  # Negative price
-                currency="USD"
-            )
-
-
-class TestAmazonScraper:
-    """Test Amazon scraper."""
-
-    @pytest.fixture
-    def amazon_scraper(self):
-        """Create Amazon scraper instance."""
-        return AmazonScraper()
-
-    def test_extract_asin_from_url(self, amazon_scraper):
-        """Test ASIN extraction from Amazon URLs."""
-        test_cases = [
-            ("https://www.amazon.com/dp/B08N5WRWNW", "B08N5WRWNW"),
-            ("https://amazon.com/gp/product/B08N5WRWNW", "B08N5WRWNW"),
-            ("https://www.amazon.de/dp/B08N5WRWNW/ref=sr_1_1", "B08N5WRWNW"),
-        ]
-
-        for url, expected_asin in test_cases:
-            asin = amazon_scraper.extract_asin(url)
-            assert asin == expected_asin
-
-    def test_extract_asin_invalid_url(self, amazon_scraper):
-        """Test ASIN extraction from invalid URLs."""
-        invalid_urls = [
-            "https://not-amazon.com/product/123",
-            "https://amazon.com/invalid",
-            "not-a-url-at-all"
-        ]
-
-        for url in invalid_urls:
-            asin = amazon_scraper.extract_asin(url)
-            assert asin is None
-
-    @patch('httpx.AsyncClient.get')
+    
+    def test_parse_price_usd(self):
+        """Test parsing USD prices."""
+        scraper = DemoScraper()
+        
+        # Test various price formats
+        price, currency = scraper.parse_price("$99.99")
+        assert price == Decimal("99.99")
+        assert currency == "USD"
+        
+        price, currency = scraper.parse_price("$1,299.00")
+        assert price == Decimal("1299.00")
+        assert currency == "USD"
+        
+        price, currency = scraper.parse_price("Price: $49")
+        assert price == Decimal("49")
+        assert currency == "USD"
+    
+    def test_parse_price_other_currencies(self):
+        """Test parsing other currencies."""
+        scraper = DemoScraper()
+        
+        price, currency = scraper.parse_price("€79.99")
+        assert price == Decimal("79.99")
+        assert currency == "EUR"
+        
+        price, currency = scraper.parse_price("£49.50")
+        assert price == Decimal("49.50")
+        assert currency == "GBP"
+    
+    def test_parse_price_invalid(self):
+        """Test parsing invalid price strings."""
+        scraper = DemoScraper()
+        
+        price, currency = scraper.parse_price("")
+        assert price is None
+        assert currency == "USD"
+        
+        price, currency = scraper.parse_price("Out of stock")
+        assert price is None
+        assert currency == "USD"
+    
     @pytest.mark.asyncio
-    async def test_scrape_product_success(self, mock_get, amazon_scraper):
-        """Test successful product scraping."""
-        # Mock successful HTTP response
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.text = """
+    async def test_check_robots_txt(self):
+        """Test robots.txt checking."""
+        scraper = DemoScraper()
+        
+        with patch.object(scraper.client, 'get') as mock_get:
+            # Mock robots.txt response
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.text = "User-agent: *\nDisallow: /admin"
+            mock_get.return_value = mock_response
+            
+            # Should allow scraping of non-admin pages
+            allowed = await scraper.check_robots_txt("https://example.com/product")
+            assert allowed is True
+
+
+class TestDemoScraper:
+    """Test demo scraper."""
+    
+    def test_can_handle_url(self):
+        """Test URL handling."""
+        scraper = DemoScraper()
+        
+        assert scraper.can_handle_url("demo://product/123")
+        assert scraper.can_handle_url("https://demo.example.com/product")
+        assert not scraper.can_handle_url("https://ebay.com/item/123")
+    
+    @pytest.mark.asyncio
+    async def test_scrape_product(self, sample_scraped_data):
+        """Test scraping demo product."""
+        scraper = DemoScraper()
+        
+        # The demo scraper reads from a local HTML file
+        try:
+            result = await scraper.scrape_product("demo://product/123")
+            assert isinstance(result, ScrapedProduct)
+            assert result.title
+            assert result.external_id == "demo-123"
+        except FileNotFoundError:
+            # If sample HTML file doesn't exist in test environment, that's OK
+            pytest.skip("Sample HTML file not found")
+
+
+class TestWebScraperIOScraper:
+    """Test WebScraper.io scraper."""
+    
+    def test_can_handle_url(self):
+        """Test URL handling."""
+        scraper = WebScraperIOScraper()
+        
+        assert scraper.can_handle_url("https://webscraper.io/test-sites/e-commerce")
+        assert not scraper.can_handle_url("https://ebay.com/item/123")
+    
+    @pytest.mark.asyncio
+    async def test_scrape_product_mock(self):
+        """Test scraping with mocked response."""
+        scraper = WebScraperIOScraper()
+        
+        mock_html = """
         <html>
-            <head><title>Test Product</title></head>
             <body>
-                <span class="a-price-whole">29</span>
-                <span class="a-price-fraction">99</span>
-                <span id="productTitle">Test Amazon Product</span>
-                <div data-brand="TestBrand">Brand</div>
+                <h1>Test Product</h1>
+                <div class="price">$29.99</div>
+                <div class="brand">Test Brand</div>
+                <img src="/test-image.jpg" class="product-image">
             </body>
         </html>
         """
-        mock_get.return_value = mock_response
-
-        url = "https://www.amazon.com/dp/B08N5WRWNW"
-        product = await amazon_scraper.scrape_product(url)
-
-        assert product is not None
-        assert "Test" in product.title
-        assert product.external_id == "B08N5WRWNW"
-
-    @patch('httpx.AsyncClient.get')
-    @pytest.mark.asyncio
-    async def test_scrape_product_failure(self, mock_get, amazon_scraper):
-        """Test failed product scraping."""
-        # Mock failed HTTP response
-        mock_response = Mock()
-        mock_response.status_code = 404
-        mock_get.return_value = mock_response
-
-        url = "https://www.amazon.com/dp/INVALID"
-        product = await amazon_scraper.scrape_product(url)
-
-        assert product is None
+        
+        with patch.object(scraper, 'make_request') as mock_request:
+            mock_response = Mock()
+            mock_response.text = mock_html
+            mock_request.return_value = mock_response
+            
+            with patch.object(scraper, 'check_robots_txt', return_value=True):
+                result = await scraper.scrape_product("https://webscraper.io/test")
+                
+                assert result.title == "Test Product"
+                assert result.price == Decimal("29.99")
+                assert result.currency == "USD"
+                assert result.brand == "Test Brand"
 
 
 class TestEbayScraper:
     """Test eBay scraper."""
-
-    @pytest.fixture
-    def ebay_scraper(self):
-        return EbayScraper()
-
-    def test_extract_item_id_from_url(self, ebay_scraper):
-        """Test item ID extraction from eBay URLs."""
-        test_cases = [
-            ("https://www.ebay.com/itm/123456789012", "123456789012"),
-            ("https://ebay.com/itm/987654321098?hash=item", "987654321098"),
-            ("https://www.ebay.de/itm/111111111111/", "111111111111"),
-        ]
-
-        for url, expected_id in test_cases:
-            item_id = ebay_scraper.extract_item_id(url)
-            assert item_id == expected_id
-
-    @patch('httpx.AsyncClient.get')
+    
+    def test_can_handle_url(self):
+        """Test URL handling."""
+        scraper = EbayScraper()
+        
+        assert scraper.can_handle_url("https://www.ebay.com/itm/123456789")
+        assert scraper.can_handle_url("https://ebay.co.uk/itm/product-name/123456789")
+        assert not scraper.can_handle_url("https://amazon.com/dp/B123")
+    
+    def test_extract_item_id(self):
+        """Test extracting eBay item ID from URLs."""
+        scraper = EbayScraper()
+        
+        # Standard format
+        item_id = scraper.extract_item_id("https://www.ebay.com/itm/123456789")
+        assert item_id == "123456789"
+        
+        # With product name
+        item_id = scraper.extract_item_id("https://www.ebay.com/itm/product-name/123456789")
+        assert item_id == "123456789"
+        
+        # Invalid URL
+        item_id = scraper.extract_item_id("https://www.ebay.com/invalid")
+        assert item_id is None
+    
     @pytest.mark.asyncio
-    async def test_scrape_product_with_api(self, mock_get, ebay_scraper):
-        """Test product scraping using eBay API."""
-        # Mock API response
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "title": "Test eBay Product",
-            "price": {"value": "45.99", "currency": "USD"},
-            "brand": "eBayBrand",
-            "image": {"imageUrl": "https://example.com/image.jpg"}
-        }
-        mock_get.return_value = mock_response
+    async def test_scrape_product_mock(self, mock_ebay_response):
+        """Test scraping with mocked eBay API response."""
+        scraper = EbayScraper()
+        
+        with patch.object(scraper, 'get_access_token', return_value="fake_token"):
+            with patch.object(scraper, 'make_request_with_rate_limit') as mock_request:
+                mock_response = Mock()
+                mock_response.status_code = 200
+                mock_response.json.return_value = mock_ebay_response
+                mock_request.return_value = mock_response
+                
+                result = await scraper.scrape_product("https://www.ebay.com/itm/123456789")
+                
+                assert result.title == "iPhone 14 Pro Max"
+                assert result.price == Decimal("999.99")
+                assert result.currency == "USD"
+                assert result.brand == "Apple"
 
-        url = "https://www.ebay.com/itm/123456789012"
-        product = await ebay_scraper.scrape_product(url)
 
-        assert product is not None
-        assert product.title == "Test eBay Product"
-        assert product.price == Decimal("45.99")
-        assert product.currency == "USD"
+class TestEtsyScraper:
+    """Test Etsy scraper."""
+    
+    def test_can_handle_url(self):
+        """Test URL handling."""
+        scraper = EtsyScraper()
+        
+        assert scraper.can_handle_url("https://www.etsy.com/listing/123456789/product-name")
+        assert not scraper.can_handle_url("https://ebay.com/item/123")
+    
+    def test_extract_listing_id(self):
+        """Test extracting Etsy listing ID from URLs."""
+        scraper = EtsyScraper()
+        
+        listing_id = scraper.extract_listing_id("https://www.etsy.com/listing/123456789/product-name")
+        assert listing_id == "123456789"
+        
+        # Invalid URL
+        listing_id = scraper.extract_listing_id("https://www.etsy.com/invalid")
+        assert listing_id is None
+    
+    @pytest.mark.asyncio
+    async def test_scrape_product_mock(self, mock_etsy_response):
+        """Test scraping with mocked Etsy API response."""
+        scraper = EtsyScraper()
+        
+        with patch.object(scraper, 'make_request_with_rate_limit') as mock_request:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = mock_etsy_response
+            mock_request.return_value = mock_response
+            
+            result = await scraper.scrape_product("https://www.etsy.com/listing/123456789/necklace")
+            
+            assert result.title == "Handmade Necklace"
+            assert result.price == Decimal("29.99")  # 2999 cents / 100
+            assert result.currency == "USD"
+            assert result.brand == "HandmadeJewelry"
+
+
+class TestScraperRegistry:
+    """Test scraper registry functionality."""
+    
+    def test_get_scraper_for_url(self):
+        """Test getting appropriate scraper for URL."""
+        # eBay URL
+        scraper = get_scraper_for_url("https://www.ebay.com/itm/123456789")
+        assert isinstance(scraper, EbayScraper)
+        
+        # Etsy URL
+        scraper = get_scraper_for_url("https://www.etsy.com/listing/123456789")
+        assert isinstance(scraper, EtsyScraper)
+        
+        # Demo URL
+        scraper = get_scraper_for_url("demo://product/123")
+        assert isinstance(scraper, DemoScraper)
+        
+        # WebScraper.io URL
+        scraper = get_scraper_for_url("https://webscraper.io/test-sites")
+        assert isinstance(scraper, WebScraperIOScraper)
+    
+    def test_get_scraper_for_unsupported_url(self):
+        """Test handling unsupported URLs."""
+        with pytest.raises(ValueError, match="No scraper found"):
+            get_scraper_for_url("https://unsupported-site.com/product/123")

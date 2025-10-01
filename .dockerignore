@@ -17,6 +17,5 @@ htmlcov/
 node_modules
 .vscode
 .idea
-tests/
 *.log
 .venv/

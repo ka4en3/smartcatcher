@@ -47,7 +47,7 @@ class UserService:
         if not user:
             raise ValueError("User not found")
 
-        update_data = user_update.dict(exclude_unset=True)
+        update_data = user_update.model_dump(exclude_unset=True)
         
         # Handle password hashing if password is being updated
         if "password" in update_data:

@@ -1,8 +1,8 @@
-# backend/Dockerfile
+# tests/Dockerfile
 
 FROM python:3.11-slim
 
-WORKDIR /backend
+WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -17,16 +17,10 @@ COPY pyproject.toml ./
 COPY uv.lock ./
 
 # Install dependencies
-RUN uv sync --no-dev --locked || uv sync --no-dev
+RUN uv sync --locked || uv sync
 
 # add binary from .venv to PATH
-ENV PATH="/backend/.venv/bin:${PATH}"
+ENV PATH="/app/.venv/bin:${PATH}"
 
 # Copy application code
-COPY backend/ ./
-
-# Expose port
-EXPOSE 8000
-
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+#COPY . .
