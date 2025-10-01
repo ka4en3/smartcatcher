@@ -266,7 +266,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 See CHANGELOG.md for version history and changes.
 
 ---
-
-<div align="center">
-Made with ❤️ by the SmartCatcher team
-</div>
