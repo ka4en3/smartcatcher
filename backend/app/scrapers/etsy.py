@@ -26,16 +26,13 @@ class EtsyScraper(BaseScraper):
 
     def extract_listing_id(self, url: str) -> Optional[str]:
         """Extract Etsy listing ID from URL."""
-        # Etsy URLs format: https://www.etsy.com/listing/123456789/product-name
-        parsed = urlparse(url)
-        path_parts = parsed.path.strip("/").split("/")
-
-        if len(path_parts) >= 2 and path_parts[0] == "listing":
-            listing_id = path_parts[1]
-            if listing_id.isdigit():
-                return listing_id
-
-        return None
+        try:
+            path_parts = urlparse(url).path.strip("/").split("/")
+            idx = path_parts.index("listing")
+            listing_id = path_parts[idx + 1]
+            return listing_id if listing_id.isdigit() else None
+        except (ValueError, IndexError):
+            return None
 
     async def scrape_product(self, url: str) -> ScrapedProduct:
         """Scrape product using Etsy Open API v3."""
