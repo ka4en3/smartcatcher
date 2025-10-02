@@ -62,6 +62,7 @@ class AuthService:
         """Refresh access and refresh tokens."""
         try:
             payload = decode_token(refresh_token)
+
             token_type = payload.get("type")
             
             if token_type != "refresh":
@@ -70,17 +71,19 @@ class AuthService:
             user_id = payload.get("sub")
             if not user_id:
                 raise AuthenticationException("Invalid token payload")
-            
+
             # Verify user still exists and is active
             user = await self.user_service.get_by_id(int(user_id))
             if not user or not user.is_active:
                 raise AuthenticationException("User not found or inactive")
-            
+
             # Create new tokens
             new_access_token = create_access_token(user_id)
             new_refresh_token = create_refresh_token(user_id)
             
             return new_access_token, new_refresh_token
-            
+
+        except AuthenticationException as e:
+            raise AuthenticationException(e.detail) from e
         except Exception as e:
             raise AuthenticationException("Invalid refresh token") from e

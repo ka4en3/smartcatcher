@@ -28,7 +28,7 @@ services:
       context: .
       dockerfile: ./tests/Dockerfile
     env_file:
-      - .env.test
+      - .env
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres-test:5432/smartcatcher_test
       REDIS_URL: redis://redis-test:6379

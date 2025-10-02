@@ -33,7 +33,7 @@ services:
       dockerfile: ./backend/Dockerfile
     container_name: smartcatcher_backend
     env_file:
-      - .env.test
+      - .env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
       - REDIS_URL=redis://redis:6379
@@ -59,7 +59,7 @@ services:
       dockerfile: ./worker/Dockerfile
     container_name: smartcatcher_worker
     env_file:
-      - .env.test
+      - .env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
       - REDIS_URL=redis://redis:6379
@@ -84,7 +84,7 @@ services:
       dockerfile: ./worker/Dockerfile
     container_name: smartcatcher_scheduler
     env_file:
-      - .env.test
+      - .env
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
       - REDIS_URL=redis://redis:6379
@@ -109,7 +109,7 @@ services:
       dockerfile: ./bot/Dockerfile
     container_name: smartcatcher_bot
     env_file:
-      - .env.test
+      - .env
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - BACKEND_URL=http://backend:8000

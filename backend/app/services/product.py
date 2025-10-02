@@ -5,7 +5,6 @@ from typing import Optional
 
 from sqlalchemy import desc, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.models.product import PriceHistory, Product
 from app.schemas.product import ProductCreate, ProductUpdate
@@ -37,14 +36,13 @@ class ProductService:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_external_id(self, external_id: str, store_name: str) -> Optional[Product]:
-        """Get product by external ID and store name."""
+    async def get_by_store_name(self, store_name: str) -> list[Product]:
+        """Get products by store name."""
         stmt = select(Product).where(
-            Product.external_id == external_id,
             Product.store_name == store_name
         )
         result = await self.session.execute(stmt)
-        return result.scalar_one_or_none()
+        return result.scalars().all()
 
     async def list_products(
         self,
@@ -149,7 +147,7 @@ class ProductService:
     async def mark_as_scraped(self, product_id: int) -> None:
         """Mark product as recently scraped."""
         from datetime import datetime
-        
+
         product = await self.get_by_id(product_id)
         if product:
             product.last_scraped_at = datetime.utcnow()
