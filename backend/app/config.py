@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # JWT
     jwt_secret_key: str = Field(
-        default="supersecretjwtkey",
+        default="test-secret-key-for-testing-only-not-secure-from-settings",
         description="Secret key for JWT tokens",
     )
     jwt_algorithm: str = Field(default="HS256", description="JWT algorithm")

@@ -13,11 +13,6 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel
 
-# Set test environment
-# os.environ["DATABASE_URL"] = "postgresql://postgres:postgres@localhost:5432/smartcatcher_test"
-# os.environ["REDIS_URL"] = "redis://localhost:6379/1"
-# os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only-not-secure"
-
 from app.config import get_settings
 from app.database import get_session
 from app.main import app
@@ -45,7 +40,8 @@ def event_loop():
 async def db_session(event_loop):
     """Fully isolated engine + session + cleanup (to be runnable on Windows)"""
     engine = create_async_engine(
-        os.getenv("DATABASE_URL").replace("postgresql://", "postgresql+asyncpg://"),
+        # os.getenv("DATABASE_URL").replace("postgresql://", "postgresql+asyncpg://"),
+        settings.database_url.replace("postgresql://", "postgresql+asyncpg://"),
         echo=False,
         pool_pre_ping=True,
         pool_recycle=300,
