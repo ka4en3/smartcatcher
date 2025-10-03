@@ -8,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User
 from app.schemas.user import UserUpdate
 
+from app.core.exceptions import UserNotFoundException
+
 
 class UserService:
     """User service."""
@@ -45,7 +47,7 @@ class UserService:
         """Update user."""
         user = await self.get_by_id(user_id)
         if not user:
-            raise ValueError("User not found")
+            raise UserNotFoundException("User not found")
 
         update_data = user_update.model_dump(exclude_unset=True)
         

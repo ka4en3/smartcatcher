@@ -8,6 +8,8 @@ from app.schemas.auth import Token, UserLogin, UserRegister, RefreshTokenRequest
 from app.schemas.user import UserRead
 from app.services.auth import AuthService
 
+from app.core.exceptions import AuthenticationException
+
 router = APIRouter()
 
 
@@ -79,7 +81,7 @@ async def refresh_token(
             access_token=new_access_token,
             refresh_token=new_refresh_token,
         )
-    except Exception as e:
+    except AuthenticationException as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",

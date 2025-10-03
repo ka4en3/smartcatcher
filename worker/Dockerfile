@@ -29,4 +29,4 @@ COPY worker/ ./
 ENV PYTHONPATH=/backend:$PYTHONPATH
 
 # Default command (can be overridden)
-CMD ["celery", "-A", "celery_app", "worker", "--loglevel=info"]
+CMD ["celery", "-A", "celery_app", "worker", "-Q", "scraper", "--loglevel=info"]

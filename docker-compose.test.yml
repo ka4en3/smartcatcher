@@ -23,15 +23,63 @@ services:
       timeout: 3s
       retries: 5
 
+#  worker-test:
+#    build:
+#      context: .
+#      dockerfile: ./worker/Dockerfile
+#    env_file:
+#      - .env
+##    environment:
+##      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
+##      - REDIS_URL=redis://redis:6379
+##      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecretjwtkey}
+##      - EBAY_CLIENT_ID=${EBAY_CLIENT_ID}
+##      - EBAY_CLIENT_SECRET=${EBAY_CLIENT_SECRET}
+##      - ETSY_API_KEY=${ETSY_API_KEY}
+##      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+#    depends_on:
+#      postgres-test:
+#        condition: service_healthy
+#      redis-test:
+#        condition: service_healthy
+#    volumes:
+#      - ./worker:/app
+#      - ./backend:app/backend
+#    command: celery -A celery_app worker -Q scraper --loglevel=info
+
+  scheduler-test:
+    build:
+      context: .
+      dockerfile: ./worker/Dockerfile
+    env_file:
+      - .env
+#    environment:
+#      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
+#      - REDIS_URL=redis://redis:6379
+#      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecretjwtkey}
+#      - EBAY_CLIENT_ID=${EBAY_CLIENT_ID}
+#      - EBAY_CLIENT_SECRET=${EBAY_CLIENT_SECRET}
+#      - ETSY_API_KEY=${ETSY_API_KEY}
+#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    volumes:
+      - ./worker:/app
+      - ./backend:app/backend
+    command: celery -A celery_app beat --loglevel=info
+
   test-runner:
     build:
       context: .
       dockerfile: ./tests/Dockerfile
     env_file:
       - .env
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres-test:5432/smartcatcher_test
-      REDIS_URL: redis://redis-test:6379
+#    environment:
+#      DATABASE_URL: postgresql://postgres:postgres@postgres-test:5432/smartcatcher_test
+#      REDIS_URL: redis://redis-test:6379
     depends_on:
       postgres-test:
         condition: service_healthy

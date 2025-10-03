@@ -39,7 +39,7 @@ app.conf.update(
     # Task routing
     task_routes={
         "tasks.scraper.*": {"queue": "scraper"},
-        "tasks.notifications.*": {"queue": "notifications"},
+        # "tasks.notifications.*": {"queue": "notifications"}, # TODO
     },
     
     # Beat schedule for periodic tasks
@@ -49,16 +49,17 @@ app.conf.update(
             "schedule": timedelta(minutes=int(os.getenv("PRICE_CHECK_INTERVAL_MINUTES", "60"))),
             "options": {"queue": "scraper"},
         },
-        "process-notifications": {
-            "task": "tasks.notifications.process_pending_notifications",
-            "schedule": timedelta(minutes=5),  # Check every 5 minutes
-            "options": {"queue": "notifications"},
-        },
-        "cleanup-old-notifications": {
-            "task": "tasks.notifications.cleanup_old_notifications",
-            "schedule": crontab(hour=2, minute=0),  # Daily at 2 AM
-            "options": {"queue": "notifications"},
-        },
+        # TODO
+        # "process-notifications": {
+        #     "task": "tasks.notifications.process_pending_notifications",
+        #     "schedule": timedelta(minutes=5),  # Check every 5 minutes
+        #     "options": {"queue": "notifications"},
+        # },
+        # "cleanup-old-notifications": {
+        #     "task": "tasks.notifications.cleanup_old_notifications",
+        #     "schedule": crontab(hour=2, minute=0),  # Daily at 2 AM
+        #     "options": {"queue": "notifications"},
+        # },
     },
 )
 

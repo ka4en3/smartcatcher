@@ -76,7 +76,7 @@ services:
     volumes:
       - ./worker:/app
       - ./backend:/backend
-    command: celery -A celery_app worker --loglevel=info
+    command: celery -A celery_app worker -Q scraper --loglevel=info
 
   scheduler:
     build:
@@ -103,20 +103,20 @@ services:
       - ./backend:/backend
     command: celery -A celery_app beat --loglevel=info
 
-  bot:
-    build:
-      context: .
-      dockerfile: ./bot/Dockerfile
-    container_name: smartcatcher_bot
-    env_file:
-      - .env
-    environment:
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - BACKEND_URL=http://backend:8000
-    depends_on:
-      - backend
-    volumes:
-      - ./bot:/app
+#  bot:
+#    build:
+#      context: .
+#      dockerfile: ./bot/Dockerfile
+#    container_name: smartcatcher_bot
+#    env_file:
+#      - .env
+#    environment:
+#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+#      - BACKEND_URL=http://backend:8000
+#    depends_on:
+#      - backend
+#    volumes:
+#      - ./bot:/app
 
 volumes:
   postgres_data:

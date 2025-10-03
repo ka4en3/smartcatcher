@@ -2,7 +2,7 @@
 
 FROM python:3.11-slim
 
-WORKDIR /backend
+WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -20,10 +20,14 @@ COPY uv.lock ./
 RUN uv sync --no-dev --locked || uv sync --no-dev
 
 # add binary from .venv to PATH
-ENV PATH="/backend/.venv/bin:${PATH}"
+ENV PATH="/app/.venv/bin:${PATH}"
 
-# Copy application code
+# Copy backend + worker
 COPY backend/ ./
+COPY worker/ ./
+
+# Set PYTHONPATH to include worker and tasks
+ENV PYTHONPATH="/backend:/worker"
 
 # Expose port
 EXPOSE 8000

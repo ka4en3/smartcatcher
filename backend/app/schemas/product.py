@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from pydantic import BaseModel, HttpUrl, ConfigDict
+from pydantic import BaseModel, HttpUrl, ConfigDict, Field
 
 
 class ProductBase(BaseModel):
@@ -64,3 +64,9 @@ class PriceHistoryRead(BaseModel):
     recorded_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProductByUrl(BaseModel):
+    """Schema for creating/getting product by URL."""
+    # url: HttpUrl = Field(..., description="Product URL")
+    url: str

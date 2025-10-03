@@ -9,6 +9,8 @@ from app.models.user import User
 from app.schemas.subscription import SubscriptionCreate, SubscriptionRead, SubscriptionUpdate
 from app.services.subscription import SubscriptionService
 
+from app.core.exceptions import ValidationException, SubscriptionNotFoundException
+
 router = APIRouter()
 
 
@@ -40,10 +42,21 @@ async def create_subscription(
     """Create new subscription."""
     subscription_service = SubscriptionService(session)
     
-    subscription = await subscription_service.create_subscription(
-        user_id=current_user.id,
-        subscription_data=subscription_data,
-    )
+    try:
+        subscription = await subscription_service.create_subscription(
+            user_id=current_user.id,
+            subscription_data=subscription_data,
+        )
+    except ValidationException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
 
     return SubscriptionRead.model_validate(subscription, from_attributes=True)
 
@@ -103,10 +116,20 @@ async def update_subscription(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to update this subscription",
         )
-    
-    updated_subscription = await subscription_service.update(
-        subscription_id, subscription_update
-    )
+    try:
+        updated_subscription = await subscription_service.update(
+            subscription_id, subscription_update
+        )
+    except SubscriptionNotFoundException as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
     return SubscriptionRead.model_validate(updated_subscription, from_attributes=True)
 
 

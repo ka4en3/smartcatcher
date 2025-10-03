@@ -10,6 +10,8 @@ from app.models.subscription import Subscription, SubscriptionType
 from app.schemas.subscription import SubscriptionCreate, SubscriptionUpdate
 from app.services.product import ProductService
 
+from app.core.exceptions import ValidationException, SubscriptionNotFoundException
+
 
 class SubscriptionService:
     """Subscription service."""
@@ -30,11 +32,7 @@ class SubscriptionService:
             if subscription_data.product_url and not product_id:
                 product = await self.product_service.get_by_url(subscription_data.product_url)
                 if not product:
-                    # For now, raise an error. In production, you might want to
-                    # automatically scrape and create the product
-                    raise ValueError(
-                        "Product not found. Please add the product first or provide product_id."
-                    )
+                    product = self.product_service.create_by_url(subscription_data.product_url)
                 product_id = product.id
 
             subscription = Subscription(
@@ -58,7 +56,7 @@ class SubscriptionService:
             )
         
         else:
-            raise ValueError("Invalid subscription type")
+            raise ValidationException("Invalid subscription type")
 
         self.session.add(subscription)
         await self.session.commit()
@@ -104,7 +102,7 @@ class SubscriptionService:
         """Update subscription."""
         subscription = await self.get_by_id(subscription_id)
         if not subscription:
-            raise ValueError("Subscription not found")
+            raise SubscriptionNotFoundException("Subscription not found")
 
         update_data = subscription_update.model_dump(exclude_unset=True)
         for field, value in update_data.items():

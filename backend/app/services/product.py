@@ -3,11 +3,18 @@
 from decimal import Decimal
 from typing import Optional
 
+from urllib.parse import urlparse
+
 from sqlalchemy import desc, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.product import PriceHistory, Product
 from app.schemas.product import ProductCreate, ProductUpdate
+from app.core.exceptions import ValidationException, ProductNotFoundException
+
+ALLOWED_STORE_DOMAINS = {
+    "ebay.com", "ebay.de", "etsy.com", "example.com",
+}
 
 
 class ProductService:
@@ -18,11 +25,67 @@ class ProductService:
 
     async def create(self, product_data: ProductCreate) -> Product:
         """Create new product."""
+        product_data.url = product_data.url.strip().lower()  # normalize URL
+
+        # Check if product with this URL already exists
+        existing_product = await self.get_by_url(product_data.url)
+        if existing_product:
+            return existing_product
+
+        # Validate URL
+        parsed = urlparse(product_data.url)
+        if not parsed.hostname:
+            raise ValidationException(detail="Invalid URL")
+
+        # Validate store domain
+        hostname = (parsed.hostname or "").lower()
+        if hostname.startswith("www."):
+            hostname = hostname[4:]
+        if hostname not in ALLOWED_STORE_DOMAINS:
+            raise ValidationException(
+                detail=f"Store domain '{hostname}' is not allowed"
+            )
+
+        # Validate price
+        if product_data.current_price <= 0:
+            raise ValidationException(detail="Price must be greater than 0")
+
+        # Validate currency
+        if product_data.currency not in ["USD", "EUR", "GBP"]:
+            raise ValidationException(detail="Currency must be USD, EUR, or GBP")
+
+        # Validate store name
+        if not product_data.store_name:
+            raise ValidationException(detail="Store name is required")
+
         product = Product(**product_data.model_dump())
         self.session.add(product)
         await self.session.commit()
         await self.session.refresh(product)
         return product
+
+    async def create_by_url(self, url: str) -> Product:
+        """Return existing product by URL or create it via scraper."""
+        # TODO Scrape product
+        try:
+            from worker.tasks.scraper import scrape_single_product
+        except ImportError:
+            raise Exception("Scrape task not found. Import error.")
+
+        # Run scraper task async
+        task = scrape_single_product.delay(url)
+        # Wait for task to finish
+        result = task.get(timeout=30) # timeout in seconds
+        if not result:
+            raise Exception("Scrape task failed. Product was not created.")
+        if not result.get("success"):
+            raise Exception("Scrape task failed. Product was not created.")
+        if not result.get("product_id"):
+            raise Exception("Scrape task failed. Product was not created.")
+        if not result.get("created"):
+            raise Exception("Scrape task failed. Product was not created.")
+
+        return self.get_by_id(result.get("product_id"))
 
     async def get_by_id(self, product_id: int) -> Optional[Product]:
         """Get product by ID."""
@@ -32,7 +95,7 @@ class ProductService:
 
     async def get_by_url(self, url: str) -> Optional[Product]:
         """Get product by URL."""
-        stmt = select(Product).where(Product.url == url)
+        stmt = select(Product).where(Product.url == url.strip().lower())
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -45,13 +108,13 @@ class ProductService:
         return result.scalars().all()
 
     async def list_products(
-        self,
-        skip: int = 0,
-        limit: int = 100,
-        search: Optional[str] = None,
-        brand: Optional[str] = None,
-        store: Optional[str] = None,
-        active_only: bool = True,
+            self,
+            skip: int = 0,
+            limit: int = 100,
+            search: Optional[str] = None,
+            brand: Optional[str] = None,
+            store: Optional[str] = None,
+            active_only: bool = True,
     ) -> list[Product]:
         """List products with filtering."""
         stmt = select(Product)
@@ -82,7 +145,7 @@ class ProductService:
         """Update product."""
         product = await self.get_by_id(product_id)
         if not product:
-            raise ValueError("Product not found")
+            raise ProductNotFoundException("Product not found")
 
         update_data = product_update.model_dump(exclude_unset=True)
         for field, value in update_data.items():
@@ -93,12 +156,12 @@ class ProductService:
         return product
 
     async def update_price(
-        self, product_id: int, new_price: Decimal, currency: str = "USD"
+            self, product_id: int, new_price: Decimal, currency: str = "USD"
     ) -> tuple[Product, PriceHistory]:
         """Update product price and create price history entry."""
         product = await self.get_by_id(product_id)
         if not product:
-            raise ValueError("Product not found")
+            raise ProductNotFoundException("Product not found")
 
         # Update product current price
         old_price = product.current_price
@@ -120,7 +183,7 @@ class ProductService:
         return product, price_history
 
     async def get_price_history(
-        self, product_id: int, skip: int = 0, limit: int = 100
+            self, product_id: int, skip: int = 0, limit: int = 100
     ) -> list[PriceHistory]:
         """Get product price history."""
         stmt = (

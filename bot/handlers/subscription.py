@@ -93,7 +93,56 @@ async def process_threshold(message: types.Message, state: FSMContext, api_clien
             await message.answer("❌ Session expired. Please start over with /subscribe")
             await state.clear()
             return
-        
+
+
+        # TODO: create new product by url if not exists in db
+
+        #             ALLOWED_STORE_DOMAINS = {
+        #                 "amazon.com", "amazon.de", "ebay.com", "ebay.de",
+        #                 "example.com",
+        #             }
+        #
+        #             def is_allowed_store(url: str) -> bool:
+        #                 try:
+        #                     host = (urlparse(url).hostname or "").lower()
+        #                     if host.startswith("www."):
+        #                         host = host[4:]
+        #                     return host in ALLOWED_STORE_DOMAINS
+        #                 except Exception:
+        #                     return False
+        #
+        #             @router.message(F.text)
+        #             async def handle_product_url(message: types.Message):
+        #                 url = message.text.strip()
+        #
+        #                 # easy check if it is a URL
+        #                 if not (url.startswith("http://") or url.startswith("https://")):
+        #                     return  # ignore; send a hint
+        #
+        #                 if not is_allowed_store(url):
+        #                     await message.answer("This store is not supported yet.")
+        #                     return
+        #
+        #                 # need user token
+        #                 access_token = await get_user_access_token_by_telegram_id(message.from_user.id)  # to implement
+        #
+        #                 async with httpx.AsyncClient(timeout=15.0) as client:
+        #                     resp = await client.post(
+        #                         f"{BOT_API_BASE}/products/by-url",
+        #                         json={"url": url},
+        #                         headers={"Authorization": f"Bearer {access_token}"}
+        #                     )
+        #
+        #                 if resp.status_code in (200, 201):
+        #                     data = resp.json()
+        #                     price = data.get("current_price")
+        #                     title = data.get("title") or "Product"
+        #                     await message.answer(f"Added: {title}\nPrice: {price}")
+        #                 else:
+        #                     err = resp.text
+        #                     await message.answer(f"Failed to add product. Reason: {err[:300]}")
+
+
         # Create subscription
         subscription_data = {
             "product_url": product_url,
