@@ -48,7 +48,8 @@ app.conf.update(
     beat_schedule={
         "check-prices": {
             "task": "tasks.scraper.check_all_product_prices",
-            "schedule": timedelta(minutes=int(os.getenv("PRICE_CHECK_INTERVAL_MINUTES", "60"))),
+            # "schedule": timedelta(minutes=int(os.getenv("PRICE_CHECK_INTERVAL_MINUTES", "60"))),
+            "schedule": timedelta(seconds=int(os.getenv("PRICE_CHECK_INTERVAL_SECONDS", "60"))),
             "options": {"queue": "scraper"},
         },
         # TODO

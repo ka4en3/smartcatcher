@@ -13,7 +13,7 @@ from app.schemas.product import ProductCreate, ProductUpdate
 from app.core.exceptions import ValidationException, ProductNotFoundException
 
 ALLOWED_STORE_DOMAINS = {
-    "ebay.com", "ebay.de", "etsy.com", "example.com",
+    "ebay.com", "ebay.de", "etsy.com", "example.com", "demo.com"
 }
 
 
@@ -60,8 +60,19 @@ class ProductService:
 
         product = Product(**product_data.model_dump())
         self.session.add(product)
+        await self.session.flush()
+        # Create price history entry
+        price_history = PriceHistory(
+            product_id=product.id,
+            price=product_data.current_price,
+            currency=product_data.currency,
+        )
+        self.session.add(price_history)
+
         await self.session.commit()
         await self.session.refresh(product)
+        await self.session.refresh(price_history)
+
         return product
 
     async def create_by_url(self, url: str) -> Product:

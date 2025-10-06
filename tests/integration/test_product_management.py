@@ -1,9 +1,14 @@
 """Integration tests for product management."""
+from time import sleep
+
 import pytest
 from decimal import Decimal
 from httpx import AsyncClient
 
+from app.config import get_settings
 from app.models import User
+
+settings = get_settings()
 
 
 # @pytest.mark.asyncio
@@ -91,11 +96,11 @@ from app.models import User
 #
 #     # Create product with initial price
 #     product_data = {
-#         "url": "https://example.com/price-history-product",
+#         "url": "http://demo.com",
 #         "title": "Price History Test Product",
 #         "current_price": 100.0,
 #         "currency": "USD",
-#         "store_name": "test_store"
+#         "store_name": "demo"
 #     }
 #
 #     create_response = await client.post(
@@ -103,6 +108,8 @@ from app.models import User
 #         json=product_data,
 #         headers=admin_headers
 #     )
+#     print(create_response.json())
+#     assert create_response.status_code == 201
 #     product_id = create_response.json()["id"]
 #
 #     # Update price multiple times
@@ -115,6 +122,7 @@ from app.models import User
 #             headers=admin_headers
 #         )
 #         assert update_response.status_code == 200
+#         sleep(settings.price_check_interval_seconds + 1)
 #
 #     # Get price history
 #     history_response = await client.get(
@@ -128,7 +136,6 @@ from app.models import User
 #
 #     # Verify price progression
 #     prices = [float(entry["price"]) for entry in price_history]
-#     assert 80.0 in prices  # Latest price should be recorded
 #     assert 100.0 in prices  # Initial price should be recorded
 
 
@@ -183,8 +190,8 @@ from app.models import User
 #         headers=admin_headers
 #     )
 #     assert response.status_code == 422
-
-
+#
+#
 # @pytest.mark.asyncio
 # async def test_duplicate_product_handling(client: AsyncClient, auth_headers: dict, admin_headers: dict):
 #     """Test handling of duplicate product URLs."""
@@ -216,6 +223,7 @@ from app.models import User
 #
 #     second_product = second_response.json()
 #     assert second_product["id"] == first_product["id"]
+
 
 @pytest.mark.asyncio
 async def test_create_or_get_product_by_url(client: AsyncClient, auth_headers: dict):

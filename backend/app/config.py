@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     price_check_interval_minutes: int = Field(
         default=60, description="Price check interval in minutes"
     )
+    price_check_interval_seconds: int = Field(
+        default=60*60, description="Price check interval in seconds"
+    )
 
     # Debug and logging
     debug: bool = Field(default=True, description="Debug mode")
