@@ -29,7 +29,7 @@ engine = create_async_engine(
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 
-@current_app.task(bind=True)
+@current_app.task(name='tasks.scraper.check_all_product_prices', bind=True)
 def check_all_product_prices(self):
     """Check prices for all active products."""
     try:
@@ -157,7 +157,7 @@ async def check_price_drop_notifications(
         logger.error(f"Error checking price drop notifications: {e}")
 
 
-@current_app.task(bind=True)
+@current_app.task(name='tasks.scraper.scrape_single_product', bind=True)
 def scrape_single_product(self, product_url: str) -> dict:
     """Scrape a single product."""
     try:
@@ -259,7 +259,7 @@ async def async_scrape_single_product(product_url: str) -> dict:
 #             raise
 
 
-@current_app.task(bind=True)
+@current_app.task(name='tasks.scraper.check_brand_products', bind=True)
 def check_brand_products(self, brand_name: str):
     """Check all products for a specific brand."""
     try:

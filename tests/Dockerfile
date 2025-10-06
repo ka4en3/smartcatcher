@@ -23,7 +23,8 @@ RUN uv sync --locked || uv sync
 ENV PATH="/app/.venv/bin:${PATH}"
 
 # Set PYTHONPATH to include worker and tasks
-ENV PYTHONPATH="/backend:/worker"
+#ENV PYTHONPATH="/backend:/worker"
+ENV PYTHONPATH="/app:$PYTHONPATH"
 
 # Copy application code
 #COPY . .       # use volumes for tests

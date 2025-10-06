@@ -16,7 +16,7 @@ sys.path.insert(0, str(backend_path))
 app = Celery("smartcatcher")
 
 # Configure Celery
-redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
 app.conf.update(
     # Broker settings
     broker_url=redis_url,
@@ -35,13 +35,15 @@ app.conf.update(
     
     # Result settings
     result_expires=3600,  # 1 hour
+
+    beat_schedule_filename="/tmp/celerybeat-schedule",
     
     # Task routing
     task_routes={
         "tasks.scraper.*": {"queue": "scraper"},
         # "tasks.notifications.*": {"queue": "notifications"}, # TODO
     },
-    
+
     # Beat schedule for periodic tasks
     beat_schedule={
         "check-prices": {
@@ -64,10 +66,11 @@ app.conf.update(
 )
 
 # Import tasks to register them
-from tasks import scraper, notifications
+# from worker.tasks import scraper, notifications   # TODO
+from tasks import scraper
 
 # Auto-discover tasks
-app.autodiscover_tasks(["tasks"])
+# app.autodiscover_tasks(["tasks"])
 
 if __name__ == "__main__":
     app.start()

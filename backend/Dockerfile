@@ -27,7 +27,8 @@ COPY backend/ ./
 COPY worker/ ./
 
 # Set PYTHONPATH to include worker and tasks
-ENV PYTHONPATH="/backend:/worker"
+#ENV PYTHONPATH="/backend:/worker"
+ENV PYTHONPATH="/app:$PYTHONPATH"
 
 # Expose port
 EXPOSE 8000
