@@ -37,7 +37,7 @@ class Product(SQLModel, table=True):
     )
 
     # Relationships
-    price_history: list["PriceHistory"] = Relationship(back_populates="product")
+    price_history: list["PriceHistory"] = Relationship(back_populates="product", cascade_delete=True)
 
     def __str__(self) -> str:
         return f"Product(id={self.id}, title={self.title}, price={self.current_price})"
