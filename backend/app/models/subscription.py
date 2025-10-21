@@ -41,8 +41,8 @@ class Subscription(SQLModel, table=True):
     )
 
     # Relationships
-    user: "User" = Relationship(back_populates="subscriptions", cascade_delete=True)
-    product: Optional["Product"] = Relationship(cascade_delete=True)
+    user: "User" = Relationship(back_populates="subscriptions")
+    product: Optional["Product"] = Relationship()
 
     def __str__(self) -> str:
         if self.subscription_type == SubscriptionType.PRODUCT:
