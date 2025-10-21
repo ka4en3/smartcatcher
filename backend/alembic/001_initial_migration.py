@@ -65,7 +65,7 @@ def upgrade() -> None:
         sa.Column('price', sa.Numeric(precision=10, scale=2), nullable=False),
         sa.Column('currency', sqlmodel.sql.sqltypes.AutoString(length=3), nullable=False),
         sa.Column('recorded_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-        sa.ForeignKeyConstraint(['product_id'], ['products.id'], ),
+        sa.ForeignKeyConstraint(['product_id'], ['products.id'], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_price_history_product_id'), 'price_history', ['product_id'], unique=False)
