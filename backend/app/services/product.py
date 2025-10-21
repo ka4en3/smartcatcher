@@ -8,9 +8,10 @@ from urllib.parse import urlparse
 from sqlalchemy import desc, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.celery_client import celery_client
 from app.models.product import PriceHistory, Product
 from app.schemas.product import ProductCreate, ProductUpdate
-from app.core.exceptions import ValidationException, ProductNotFoundException
+from app.core.exceptions import ValidationException, ProductNotFoundException, ScrapingException
 
 ALLOWED_STORE_DOMAINS = {
     "ebay.com", "ebay.de", "etsy.com", "example.com", "demo.com"
@@ -77,26 +78,23 @@ class ProductService:
 
     async def create_by_url(self, url: str) -> Product:
         """Return existing product by URL or create it via scraper."""
-        # TODO Scrape product
+        # Send task and wait for result
+        task = celery_client.send_task(
+            'tasks.scraper.scrape_single_product',
+            args=[url],
+            queue='scraper'
+        )
         try:
-            from worker.tasks.scraper import scrape_single_product
-        except ImportError:
-            raise Exception("Scrape task not found. Import error.")
+            # Wait up to 30 seconds for result
+            result = task.get(timeout=30)
 
-        # Run scraper task async
-        task = scrape_single_product.delay(url)
-        # Wait for task to finish
-        result = task.get(timeout=30) # timeout in seconds
-        if not result:
-            raise Exception("Scrape task failed. Product was not created.")
-        if not result.get("success"):
-            raise Exception("Scrape task failed. Product was not created.")
-        if not result.get("product_id"):
-            raise Exception("Scrape task failed. Product was not created.")
-        if not result.get("created"):
-            raise Exception("Scrape task failed. Product was not created.")
-
-        return self.get_by_id(result.get("product_id"))
+            # Get the created product from DB
+            product = await self.get_by_id(result['product_id'])
+            return product
+        except Exception as e:
+            raise ScrapingException(
+                detail=f"Failed to scrape product by {url}: {str(e)}"
+            )
 
     async def get_by_id(self, product_id: int) -> Optional[Product]:
         """Get product by ID."""
