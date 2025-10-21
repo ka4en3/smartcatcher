@@ -55,7 +55,7 @@ class PriceHistory(SQLModel, table=True):
     __tablename__ = "price_history"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    product_id: int = Field(foreign_key="products.id", index=True)
+    product_id: int = Field(foreign_key="products.id", index=True, ondelete="CASCADE")
     price: Decimal = Field(decimal_places=2)
     currency: str = Field(max_length=3)
     recorded_at: datetime = Field(

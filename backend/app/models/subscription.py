@@ -22,8 +22,8 @@ class Subscription(SQLModel, table=True):
     __tablename__ = "subscriptions"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id", index=True)
-    product_id: Optional[int] = Field(default=None, foreign_key="products.id")
+    user_id: int = Field(foreign_key="users.id", index=True, ondelete="CASCADE")
+    product_id: Optional[int] = Field(default=None, foreign_key="products.id", ondelete="CASCADE")
     subscription_type: SubscriptionType = Field(default=SubscriptionType.PRODUCT)
     brand_name: Optional[str] = Field(default=None, index=True)
     price_threshold: Optional[Decimal] = Field(default=None, decimal_places=2)
@@ -41,8 +41,8 @@ class Subscription(SQLModel, table=True):
     )
 
     # Relationships
-    user: "User" = Relationship(back_populates="subscriptions")  # type: ignore
-    product: Optional["Product"] = Relationship()  # type: ignore
+    user: "User" = Relationship(back_populates="subscriptions", cascade_delete=True)
+    product: Optional["Product"] = Relationship(cascade_delete=True)
 
     def __str__(self) -> str:
         if self.subscription_type == SubscriptionType.PRODUCT:

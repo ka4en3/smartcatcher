@@ -34,7 +34,7 @@ class User(SQLModel, table=True):
     )
 
     # Relationships
-    subscriptions: list[Subscription] = Relationship(back_populates="user")
+    subscriptions: list[Subscription] = Relationship(back_populates="user", cascade_delete=True)
 
     def __str__(self) -> str:
         return f"User(id={self.id}, email={self.email})"
