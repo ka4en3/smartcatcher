@@ -81,4 +81,5 @@ services:
       - ./bot:/app/bot
       - ./worker:/app/worker
       - ./tests:/app/tests
-    command: pytest -v
+#    command: sh -c "cd /app/backend && alembic upgrade head && alembic revision --autogenerate -m \"initial migration\" && alembic upgrade head"
+    command: sh -c "pytest -v -s"
