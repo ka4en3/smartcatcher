@@ -32,7 +32,7 @@ class Notification(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="users.id", index=True, ondelete="CASCADE")
-    subscription_id: int = Field(foreign_key="subscriptions.id", index=True)
+    subscription_id: int = Field(foreign_key="subscriptions.id", index=True, ondelete="CASCADE")
     product_id: Optional[int] = Field(default=None, foreign_key="products.id", ondelete="CASCADE")
     notification_type: NotificationType = Field(index=True)
     status: NotificationStatus = Field(default=NotificationStatus.PENDING, index=True)
