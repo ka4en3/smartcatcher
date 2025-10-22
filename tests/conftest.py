@@ -38,7 +38,7 @@ def event_loop():
 
 @pytest_asyncio.fixture
 async def db_session(event_loop):
-    """Fully isolated engine + session + cleanup (to be runnable on Windows)"""
+    """Fully isolated engine + session + cleanup"""
     engine = create_async_engine(
         # os.getenv("DATABASE_URL").replace("postgresql://", "postgresql+asyncpg://"),
         settings.database_url.replace("postgresql://", "postgresql+asyncpg://"),
