@@ -58,7 +58,7 @@ class Settings(BaseSettings):
 
     # Scraper settings
     scraper_user_agent: str = Field(
-        default="SmartCatcher/1.0 (+https://example.com/bot)",
+        default="SmartCatcher/1.0 (no-public-bot-info)",
         description="User agent for web scraping",
     )
     scraper_request_delay: float = Field(

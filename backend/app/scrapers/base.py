@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ScrapedProduct:
     """Scraped product data."""
-    
+
     title: str
     price: Optional[Decimal]
     currency: str
@@ -34,8 +34,39 @@ class ScrapedProduct:
 class BaseScraper(ABC):
     """Base scraper class."""
 
+    # def __init__(self, name: str):
+    #     self.name = name
+    #     self.client = httpx.AsyncClient(
+    #         headers={
+    #             "User-Agent": settings.scraper_user_agent,
+    #             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    #             "Accept-Language": "en-US,en;q=0.5",
+    #             "Accept-Encoding": "gzip, deflate",
+    #             "Connection": "keep-alive",
+    #             "Upgrade-Insecure-Requests": "1",
+    #         },
+    #         timeout=settings.scraper_timeout,
+    #         follow_redirects=True,
+    #     )
+    #
+    # async def __aenter__(self):
+    #     """Async context manager entry."""
+    #     await self.client.__aenter__()
+    #     return self
+    #
+    # async def __aexit__(self, exc_type, exc_val, exc_tb):
+    #     """Async context manager exit."""
+    #     # await self.client.aclose()
+    #     await self.client.__aexit__(exc_type, exc_val, exc_tb)
+
     def __init__(self, name: str):
         self.name = name
+        self.client = None  # Client will be created on every context enter
+
+    # Async context manager entry
+    async def __aenter__(self):
+        if self.client is not None:
+            raise RuntimeError("Client already open. Did you forget to close?")
         self.client = httpx.AsyncClient(
             headers={
                 "User-Agent": settings.scraper_user_agent,
@@ -48,14 +79,14 @@ class BaseScraper(ABC):
             timeout=settings.scraper_timeout,
             follow_redirects=True,
         )
-
-    async def __aenter__(self):
-        """Async context manager entry."""
+        await self.client.__aenter__()
         return self
 
+    # Async context manager exit
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit."""
-        await self.client.aclose()
+        if self.client is not None:
+            await self.client.__aexit__(exc_type, exc_val, exc_tb)
+            self.client = None
 
     @abstractmethod
     def can_handle_url(self, url: str) -> bool:
@@ -67,25 +98,26 @@ class BaseScraper(ABC):
         """Scrape product data from URL."""
         pass
 
-    async def check_robots_txt(self, url: str, user_agent: str = "*") -> bool:
+    async def check_robots_txt(self, url: str) -> bool:
         """Check if scraping is allowed by robots.txt."""
         try:
             from urllib.parse import urljoin, urlparse
-            
+
             parsed_url = urlparse(url)
             robots_url = f"{parsed_url.scheme}://{parsed_url.netloc}/robots.txt"
-            
+
             response = await self.client.get(robots_url)
             if response.status_code != 200:
                 # If robots.txt doesn't exist, assume scraping is allowed
                 return True
-            
+
             rp = RobotFileParser()
             rp.set_url(robots_url)
             rp.read()
-            
+
+            user_agent = settings.scraper_user_agent
             return rp.can_fetch(user_agent, url)
-            
+
         except Exception as e:
             logger.warning(f"Failed to check robots.txt for {url}: {e}")
             # If we can't check robots.txt, err on the side of caution
@@ -94,7 +126,7 @@ class BaseScraper(ABC):
     async def make_request(self, url: str, **kwargs) -> httpx.Response:
         """Make HTTP request with retry logic and rate limiting."""
         last_exception = None
-        
+
         for attempt in range(settings.scraper_retry_attempts):
             try:
                 # Add delay between requests (respect rate limits)
@@ -103,9 +135,9 @@ class BaseScraper(ABC):
                     await asyncio.sleep(delay)
                 elif settings.scraper_request_delay > 0:
                     await asyncio.sleep(settings.scraper_request_delay)
-                
+
                 response = await self.client.get(url, **kwargs)
-                
+
                 # Handle rate limiting
                 if response.status_code == 429:
                     retry_after = response.headers.get("Retry-After")
@@ -116,19 +148,19 @@ class BaseScraper(ABC):
                         # Default backoff for rate limiting
                         await asyncio.sleep(60)
                         continue
-                
+
                 response.raise_for_status()
                 return response
-                
+
             except (httpx.RequestError, httpx.HTTPStatusError) as e:
                 last_exception = e
                 logger.warning(
                     f"Request attempt {attempt + 1} failed for {url}: {e}"
                 )
-                
+
                 if attempt < settings.scraper_retry_attempts - 1:
                     continue
-        
+
         # All attempts failed
         raise last_exception or Exception("All retry attempts failed")
 
@@ -136,21 +168,21 @@ class BaseScraper(ABC):
         """Parse price from text and extract currency."""
         if not price_text:
             return None, "USD"
-        
+
         import re
-        
+
         # Clean the price text
         price_text = price_text.strip().replace(",", "").replace("\n", " ")
-        
+
         # Common currency symbols and their codes
         currency_map = {
             "$": "USD",
-            "€": "EUR", 
+            "€": "EUR",
             "£": "GBP",
             "¥": "JPY",
             "₽": "RUB",
         }
-        
+
         # Extract currency symbol
         currency = "USD"  # default
         for symbol, code in currency_map.items():
@@ -158,7 +190,7 @@ class BaseScraper(ABC):
                 currency = code
                 price_text = price_text.replace(symbol, "").strip()
                 break
-        
+
         # Extract numeric value
         price_match = re.search(r"(\d+\.?\d*)", price_text)
         if price_match:
@@ -167,7 +199,7 @@ class BaseScraper(ABC):
                 return price, currency
             except (ValueError, TypeError):
                 pass
-        
+
         return None, currency
 
     def get_soup(self, html_content: str) -> BeautifulSoup:
