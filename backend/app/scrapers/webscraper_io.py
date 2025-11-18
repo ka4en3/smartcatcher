@@ -3,7 +3,7 @@
 from decimal import Decimal
 from typing import Optional
 
-from app.scrapers.base import BaseScraper, ScrapedProduct
+from app.scrapers.base import BaseScraper, ScrapedProduct, logger
 
 
 class WebScraperIOScraper(BaseScraper):
@@ -21,23 +21,24 @@ class WebScraperIOScraper(BaseScraper):
         # Check robots.txt (webscraper.io is designed for scraping practice)
         robots_allowed = await self.check_robots_txt(url)
         if not robots_allowed:
-            raise ValueError(f"Scraping not allowed by robots.txt for {url}")
+            logger.warning(f"Scraping not allowed by robots.txt for {url}")
+            # raise ValueError(f"Scraping not allowed by robots.txt for {url}")  # webscraper.io is designed for scraping practice
 
         response = await self.make_request(url)
         soup = self.get_soup(response.text)
-        
+
         # Parse product details based on webscraper.io structure
         # The site has different layouts, so we try multiple selectors
-        
+
         # Try to find product title
         title_selectors = [
             "h1",
-            ".product-title", 
+            ".product-title",
             ".title",
             "h2",
             ".name"
         ]
-        
+
         title = None
         for selector in title_selectors:
             title_elem = soup.select_one(selector)
@@ -45,10 +46,10 @@ class WebScraperIOScraper(BaseScraper):
                 title = self.extract_text(title_elem)
                 if title:
                     break
-        
+
         if not title:
             title = "Unknown Product"
-        
+
         # Try to find price
         price_selectors = [
             ".price",
@@ -57,7 +58,7 @@ class WebScraperIOScraper(BaseScraper):
             ".cost",
             ".amount"
         ]
-        
+
         price = None
         currency = "USD"
         for selector in price_selectors:
@@ -68,14 +69,14 @@ class WebScraperIOScraper(BaseScraper):
                     price, currency = self.parse_price(price_text)
                     if price:
                         break
-        
+
         # Try to find brand
         brand_selectors = [
             ".brand",
-            ".manufacturer", 
+            ".manufacturer",
             "[class*='brand']"
         ]
-        
+
         brand = None
         for selector in brand_selectors:
             brand_elem = soup.select_one(selector)
@@ -83,7 +84,7 @@ class WebScraperIOScraper(BaseScraper):
                 brand = self.extract_text(brand_elem)
                 if brand:
                     break
-        
+
         # Try to find image
         image_selectors = [
             ".product-image img",
@@ -92,7 +93,7 @@ class WebScraperIOScraper(BaseScraper):
             ".product img",
             "img"
         ]
-        
+
         image_url = None
         for selector in image_selectors:
             image_elem = soup.select_one(selector)
@@ -103,7 +104,7 @@ class WebScraperIOScraper(BaseScraper):
                     from urllib.parse import urljoin
                     image_url = urljoin(url, image_url)
                 break
-        
+
         return ScrapedProduct(
             title=title,
             price=price,

@@ -1,7 +1,9 @@
 # backend/app/scrapers/base.py
 
-import asyncio
 import logging
+import sys
+import asyncio
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from decimal import Decimal
@@ -14,8 +16,17 @@ from bs4 import BeautifulSoup
 from app.config import get_settings
 
 settings = get_settings()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    stream=sys.stdout,
+)
 logger = logging.getLogger(__name__)
 
+
+# logger = logging.getLogger(__name__)
 
 @dataclass
 class ScrapedProduct:

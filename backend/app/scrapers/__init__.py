@@ -25,7 +25,7 @@ def get_scraper_for_url(url: str) -> BaseScraper:
 
 __all__ = [
     "BaseScraper",
-    "ScrapedProduct", 
+    "ScrapedProduct",
     "DemoScraper",
     "WebScraperIOScraper",
     "EbayScraper",
