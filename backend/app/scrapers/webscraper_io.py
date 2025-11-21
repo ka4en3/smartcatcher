@@ -32,11 +32,14 @@ class WebScraperIOScraper(BaseScraper):
 
         # Try to find product title
         title_selectors = [
-            "h1",
+            ".card-title a",
+            ".card-title",
+            "h4.card-title",
             ".product-title",
             ".title",
-            "h2",
-            ".name"
+            ".name",
+            "h1",
+            "h2"
         ]
 
         title = None
