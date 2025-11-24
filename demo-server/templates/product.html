@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - SmartCatcher Demo</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; line-height: 1.6; }
+        .product-container { display: flex; gap: 30px; align-items: flex-start; margin-bottom: 30px; }
+        .product-image { max-width: 300px; border-radius: 8px; }
+        .product-details h1 { margin-top: 0; font-size: 28px; color: #1a1a1a; }
+        .product-brand { color: #666; font-size: 18px; margin-bottom: 10px; }
+        .product-price { font-size: 32px; color: #e47911; font-weight: bold; margin: 15px 0; }
+        .controls { margin-top: 20px; font-size: 14px; color: #888; }
+        .endpoint { background: #f0f0f0; padding: 8px 12px; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="product-container">
+        <img src="{{ image_url }}" alt="{{ title }}" class="product-image">
+        <div class="product-details">
+            <h1 class="product-title">{{ title }}</h1>
+            <div class="product-brand">Brand: {{ brand }}</div>
+            <div class="product-price price">{{ price }}</div>
+            <p><strong>SKU:</strong> <span style="display:none">{{ sku }}</span></p>
+
+            <div class="controls">
+                <p>💡 Это демо-страница для SmartCatcher.</p>
+                <p>Цена автоматически меняется каждую минуту.</p>
+                <p>Или установи вручную:</p>
+                <div class="endpoint">
+                    POST /set-price/{{ product_id }}/новая_цена
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
