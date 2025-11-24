@@ -27,6 +27,14 @@ services:
       timeout: 3s
       retries: 5
 
+  demo-server:
+    build: ./demo-server
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./demo-server:/app/demo-server
+    restart: unless-stopped
+
   backend:
     build:
       context: .
