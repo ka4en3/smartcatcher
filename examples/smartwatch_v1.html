@@ -1,9 +1,10 @@
+<!-- examples/demo_products/smartwatch_v1.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demo Product - SmartCatcher Sample</title>
+    <title>Smart Fitness Watch Pro - Version 1</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         .product-container { display: flex; gap: 30px; }
@@ -20,51 +21,58 @@
 <body>
     <div class="product-container">
         <div class="product-image-section">
-            <img src="https://via.placeholder.com/300x300/007bff/ffffff?text=Demo+Product" 
-                 alt="Demo Smart Watch" 
+            <img src="https://via.placeholder.com/300x300/007bff/ffffff?text=Smart+Watch"
+                 alt="Smart Fitness Watch Pro"
                  class="product-image main-image">
         </div>
-        
+
         <div class="product-details">
             <h1 class="product-title">Smart Fitness Watch Pro</h1>
             <div class="product-brand brand">TechGear</div>
-            <div class="product-price price">$131.99</div>
-            
+            <div class="product-price price">$130.99</div>
+
             <div class="description">
-                <h3>Product Description</h3>
-                <p>This is a demonstration product page for SmartCatcher's demo scraper. 
-                   The Smart Fitness Watch Pro features advanced health monitoring, 
-                   GPS tracking, and 7-day battery life. Perfect for fitness enthusiasts 
-                   and tech lovers alike.</p>
-                
+                <p>Advanced health monitoring, GPS tracking, and 7-day battery life.</p>
                 <ul>
-                    <li>Heart rate monitoring</li>
-                    <li>GPS and GLONASS support</li>
+                    <li>Heart rate & sleep tracking</li>
                     <li>Water resistant up to 50m</li>
-                    <li>7-day battery life</li>
-                    <li>Compatible with iOS and Android</li>
+                    <li>Bluetooth 5.0 connectivity</li>
                 </ul>
             </div>
-            
-            <div class="product-specs">
-                <h3>Specifications</h3>
-                <table>
-                    <tr><td><strong>Display:</strong></td><td>1.4" AMOLED</td></tr>
-                    <tr><td><strong>Battery:</strong></td><td>300mAh Li-ion</td></tr>
-                    <tr><td><strong>Connectivity:</strong></td><td>Bluetooth 5.0, WiFi</td></tr>
-                    <tr><td><strong>Weight:</strong></td><td>45g</td></tr>
-                </table>
-            </div>
-            
             <button class="buy-button">Add to Cart</button>
         </div>
     </div>
-    
-    <!-- Additional product data for scraper testing -->
+
+    <!-- hidden data -->
     <div style="display: none;">
         <span class="availability">In Stock</span>
         <span class="sku">SKU: DEMO-WATCH-001</span>
-        <span class="category">Electronics > Wearables > Smart Watches</span>
     </div>
+
+    <!-- Random price change every minute -->
+    <script>
+        const priceElement = document.querySelector('.product-price') || document.querySelector('.price');
+        const basePriceText = priceElement.innerText.trim();
+        const basePrice = parseFloat(basePriceText.replace('$', ''));
+
+        function getRandomPrice() {
+            const variation = 0.10;
+            const min = basePrice * (1 - variation);
+            const max = basePrice * (1 + variation);
+            const randomPrice = min + (Math.random() * (max - min));
+            return Math.round(randomPrice * 100) / 100;
+        }
+
+        function updatePrice() {
+            const newPrice = getRandomPrice();
+            if (priceElement) {
+                priceElement.innerText = '$' + newPrice.toFixed(2);
+                console.log('Цена обновлена:', '$' + newPrice.toFixed(2));
+            }
+        }
+
+        updatePrice(); // change price on start
+        setInterval(updatePrice, 60000); // every minute
+    </script>
 </body>
 </html>
