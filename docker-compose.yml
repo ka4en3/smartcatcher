@@ -51,7 +51,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app/backend
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 
   worker:
     build:
@@ -76,6 +76,7 @@ services:
     volumes:
       - ./worker:/app/worker
       - ./backend:/app/backend
+      - ./examples:/app/examples
     command: celery -A worker.celery_app worker -Q scraper --loglevel=info
 
   scheduler:
@@ -101,6 +102,7 @@ services:
     volumes:
       - ./worker:/app/worker
       - ./backend:/app/backend
+      - ./examples:/app/examples
     command: celery -A worker.celery_app beat --loglevel=info
 
 #  bot:

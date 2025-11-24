@@ -22,9 +22,8 @@ RUN uv sync --no-dev --locked || uv sync --no-dev
 # add binary from .venv to PATH
 ENV PATH="/app/.venv/bin:${PATH}"
 
-# Copy backend + worker
-COPY backend/ ./
-COPY worker/ ./
+# Copy backend
+COPY backend/ ./backend/
 
 # Set PYTHONPATH to include worker and tasks
 #ENV PYTHONPATH="/backend:/worker"
@@ -33,7 +32,7 @@ ENV PYTHONPATH="/app:$PYTHONPATH"
 # Expose port
 EXPOSE 8000
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["./backend/entrypoint.sh"]
 
 # Run the application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
