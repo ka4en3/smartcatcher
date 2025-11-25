@@ -14,7 +14,7 @@ from app.schemas.product import ProductCreate, ProductUpdate
 from app.core.exceptions import ValidationException, ProductNotFoundException, ScrapingException
 
 ALLOWED_STORE_DOMAINS = {
-    "ebay.com", "ebay.de", "etsy.com", "example.com", "demo.com", "webscraper.io"
+    "ebay.com", "ebay.de", "etsy.com", "example.com", "demo.com", "webscraper.io", "demo-server"
 }
 
 
