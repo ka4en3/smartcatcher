@@ -26,8 +26,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# logger = logging.getLogger(__name__)
-
 @dataclass
 class ScrapedProduct:
     """Scraped product data."""
@@ -45,59 +43,46 @@ class ScrapedProduct:
 class BaseScraper(ABC):
     """Base scraper class."""
 
-    # def __init__(self, name: str):
-    #     self.name = name
-    #     self.client = httpx.AsyncClient(
-    #         headers={
-    #             "User-Agent": settings.scraper_user_agent,
-    #             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    #             "Accept-Language": "en-US,en;q=0.5",
-    #             "Accept-Encoding": "gzip, deflate",
-    #             "Connection": "keep-alive",
-    #             "Upgrade-Insecure-Requests": "1",
-    #         },
-    #         timeout=settings.scraper_timeout,
-    #         follow_redirects=True,
-    #     )
-    #
-    # async def __aenter__(self):
-    #     """Async context manager entry."""
-    #     await self.client.__aenter__()
-    #     return self
-    #
-    # async def __aexit__(self, exc_type, exc_val, exc_tb):
-    #     """Async context manager exit."""
-    #     # await self.client.aclose()
-    #     await self.client.__aexit__(exc_type, exc_val, exc_tb)
-
     def __init__(self, name: str):
         self.name = name
-        self.client = None  # Client will be created on every context enter
+        self._client = None
+        self._client_managed = False
 
-    # Async context manager entry
+    def _ensure_client(self):
+        """Ensure HTTP client exists (lazy initialization)."""
+        if self._client is None:
+            self._client = httpx.AsyncClient(
+                headers={
+                    "User-Agent": settings.scraper_user_agent,
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "Accept-Encoding": "gzip, deflate",
+                    "Connection": "keep-alive",
+                    "Upgrade-Insecure-Requests": "1",
+                },
+                timeout=settings.scraper_timeout,
+                follow_redirects=True,
+            )
+            self._client_managed = False  # Not managed by context manager
+
+    @property
+    def client(self):
+        """Get HTTP client (creates if needed)."""
+        self._ensure_client()
+        return self._client
+
     async def __aenter__(self):
-        if self.client is not None:
-            raise RuntimeError("Client already open. Did you forget to close?")
-        self.client = httpx.AsyncClient(
-            headers={
-                "User-Agent": settings.scraper_user_agent,
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5",
-                "Accept-Encoding": "gzip, deflate",
-                "Connection": "keep-alive",
-                "Upgrade-Insecure-Requests": "1",
-            },
-            timeout=settings.scraper_timeout,
-            follow_redirects=True,
-        )
-        await self.client.__aenter__()
+        """Async context manager entry."""
+        self._ensure_client()
+        self._client_managed = True
         return self
 
-    # Async context manager exit
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        if self.client is not None:
-            await self.client.__aexit__(exc_type, exc_val, exc_tb)
-            self.client = None
+        """Async context manager exit."""
+        if self._client is not None and self._client_managed:
+            await self._client.aclose()
+            self._client = None
+            self._client_managed = False
 
     @abstractmethod
     def can_handle_url(self, url: str) -> bool:
