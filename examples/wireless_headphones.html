@@ -1,0 +1,50 @@
+<!-- examples/demo_products/wireless_headphones.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Wireless Headphones</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .product-container { display: flex; gap: 30px; }
+        .product-image { max-width: 300px; }
+        .product-details { flex: 1; }
+        .product-title { font-size: 24px; margin-bottom: 10px; }
+        .product-brand { color: #666; margin-bottom: 15px; }
+        .product-price { font-size: 28px; color: #e47911; font-weight: bold; margin-bottom: 20px; }
+        .description { line-height: 1.6; margin-bottom: 20px; }
+        .buy-button { background-color: #ff9900; color: white; padding: 10px 30px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; }
+        .buy-button:hover { background-color: #e88900; }
+    </style>
+</head>
+<body>
+    <div class="product-container">
+        <div class="product-image-section">
+            <img src="https://via.placeholder.com/300x300/28a745/ffffff?text=Headphones"
+                 alt="Wireless Noise-Cancelling Headphones"
+                 class="product-image main-image">
+        </div>
+
+        <div class="product-details">
+            <h1 class="product-title">Premium Wireless Headphones</h1>
+            <div class="product-brand brand">SoundMax</div>
+            <div class="product-price price">$199.99</div>
+
+            <div class="description">
+                <p>Noise-cancelling over-ear headphones with 30-hour battery life.</p>
+                <ul>
+                    <li>Active Noise Cancellation</li>
+                    <li>Hi-Res audio support</li>
+                    <li>Quick charge: 5 min = 2 hours</li>
+                </ul>
+            </div>
+            <button class="buy-button">Add to Cart</button>
+        </div>
+    </div>
+    <div style="display: none;">
+        <span class="availability">In Stock</span>
+        <span class="sku">SKU: DEMO-HEADPHONES-001</span>
+    </div>
+</body>
+</html>
