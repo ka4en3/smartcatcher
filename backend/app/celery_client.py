@@ -4,10 +4,13 @@
 import os
 from celery import Celery
 
+from app.database import settings
+
 
 def get_celery_client() -> Celery:
     """Get Celery client for sending tasks (not for consuming)."""
-    redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
+    # redis_url = os.getenv("REDIS_URL", "redis://redis:6379")
+    redis_url = settings.redis_url
 
     # Create minimal Celery app just for sending tasks
     app = Celery("smartcatcher_client")
