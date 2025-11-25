@@ -93,6 +93,12 @@ async def product_page(request: Request, product_id: str):
     )
 
 
+@app.get("/{product_id}.html")
+async def product_page_with_extension(request: Request, product_id: str):
+    """Support URLs with .html extension"""
+    return await product_page(request, product_id)
+
+
 @app.post("/set-price/{product_id}/{price}")
 async def set_price(product_id: str, price: float):
     if product_id not in PRODUCTS:
