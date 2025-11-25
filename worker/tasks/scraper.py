@@ -1,5 +1,8 @@
 # worker/tasks/scraper.py
 
+from redis import Redis
+import time, os
+
 import asyncio
 import logging
 from datetime import datetime
@@ -20,6 +23,8 @@ from app.services.subscription import SubscriptionService
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
+
+redis_client = Redis.from_url(settings.redis_url)
 
 # Create async engine for worker
 engine = create_async_engine(
@@ -45,63 +50,74 @@ async def async_check_all_product_prices():
     """Async implementation of check_all_product_prices."""
     logger.info("Starting product price check...")
 
-    async with async_session_maker() as session:
+    lock = redis_client.lock("lock:check_all_product_prices", blocking=False, timeout=300)
+    if not lock.acquire(blocking=False):
+        logger.info("Another price-check run is in progress — skipping this run.")
+        return {"checked": 0, "updated": 0}
+
+    try:
+        async with async_session_maker() as session:
+            try:
+                product_service = ProductService(session)
+
+                # Get products that need scraping
+                products = await product_service.get_products_for_scraping(limit=50)
+                logger.info(f"Found {len(products)} products to check")
+
+                checked_count = 0
+                updated_count = 0
+
+                for product in products:
+                    try:
+                        # Get appropriate scraper
+                        scraper = get_scraper_for_url(product.url)
+
+                        async with scraper:
+                            # Scrape current product data
+                            scraped_data = await scraper.scrape_product(product.url)
+
+                            if scraped_data.price and scraped_data.price != product.current_price:
+                                old_price = product.current_price
+
+                                # Update product price
+                                await product_service.update_price(
+                                    product.id, scraped_data.price, scraped_data.currency
+                                )
+
+                                logger.info(
+                                    f"Price updated for product {product.id}: "
+                                    f"{old_price} -> {scraped_data.price}"
+                                )
+
+                                # Check for price drop notifications TODO
+                                # await check_price_drop_notifications(
+                                #     session, product.id, old_price, scraped_data.price, scraped_data.currency
+                                # )
+
+                                updated_count += 1
+
+                            # Mark as scraped
+                            await product_service.mark_as_scraped(product.id)
+                            checked_count += 1
+
+                            # Add delay between scrapes to be respectful
+                            await asyncio.sleep(settings.scraper_request_delay)
+
+                    except Exception as e:
+                        logger.error(f"Error checking product {product.id} ({product.url}): {e}")
+                        continue
+
+                logger.info(f"Price check completed: {checked_count} checked, {updated_count} updated")
+                return {"checked": checked_count, "updated": updated_count}
+
+            except Exception as e:
+                logger.error(f"Error in price check task: {e}")
+                raise
+    finally:
         try:
-            product_service = ProductService(session)
-
-            # Get products that need scraping
-            products = await product_service.get_products_for_scraping(limit=50)
-            logger.info(f"Found {len(products)} products to check")
-
-            checked_count = 0
-            updated_count = 0
-
-            for product in products:
-                try:
-                    # Get appropriate scraper
-                    scraper = get_scraper_for_url(product.url)
-
-                    async with scraper:
-                        # Scrape current product data
-                        scraped_data = await scraper.scrape_product(product.url)
-
-                        if scraped_data.price and scraped_data.price != product.current_price:
-                            old_price = product.current_price
-
-                            # Update product price
-                            await product_service.update_price(
-                                product.id, scraped_data.price, scraped_data.currency
-                            )
-
-                            logger.info(
-                                f"Price updated for product {product.id}: "
-                                f"{old_price} -> {scraped_data.price}"
-                            )
-
-                            # Check for price drop notifications TODO
-                            # await check_price_drop_notifications(
-                            #     session, product.id, old_price, scraped_data.price, scraped_data.currency
-                            # )
-
-                            updated_count += 1
-
-                        # Mark as scraped
-                        await product_service.mark_as_scraped(product.id)
-                        checked_count += 1
-
-                        # Add delay between scrapes to be respectful
-                        await asyncio.sleep(settings.scraper_request_delay)
-
-                except Exception as e:
-                    logger.error(f"Error checking product {product.id} ({product.url}): {e}")
-                    continue
-
-            logger.info(f"Price check completed: {checked_count} checked, {updated_count} updated")
-            return {"checked": checked_count, "updated": updated_count}
-
-        except Exception as e:
-            logger.error(f"Error in price check task: {e}")
-            raise
+            lock.release()
+        except Exception:
+            pass
 
 
 async def check_price_drop_notifications(
@@ -227,6 +243,7 @@ async def async_scrape_single_product(product_url: str) -> dict:
         except Exception as e:
             logger.error(f"Error scraping product {product_url}: {e}")
             raise
+
 
 # TODO maybe remove this task
 # @current_app.task(bind=True)
