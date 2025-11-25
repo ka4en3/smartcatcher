@@ -1,3 +1,5 @@
+# backend/app/celery_client.py
+
 """Celery client for sending tasks from backend services."""
 import os
 from celery import Celery
