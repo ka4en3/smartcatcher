@@ -36,4 +36,4 @@ COPY examples/ ./examples/
 ENV PYTHONPATH="/app:/app/worker:$PYTHONPATH"
 
 # Default command (can be overridden)
-CMD ["celery", "-A", "worker.celery_app", "worker", "-Q", "scraper", "--loglevel=info"]
+CMD ["celery", "-A", "worker.celery_app", "worker", "-Q", "scraper", "notifications", "--loglevel=info"]
