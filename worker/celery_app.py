@@ -48,14 +48,12 @@ app.conf.update(
     beat_schedule={
         "check-prices": {
             "task": "tasks.scraper.check_all_product_prices",
-            # "schedule": timedelta(minutes=int(os.getenv("PRICE_CHECK_INTERVAL_MINUTES", "60"))),
-            "schedule": timedelta(seconds=int(os.getenv("PRICE_CHECK_INTERVAL_SECONDS", "60"))),
+            "schedule": timedelta(minutes=int(os.getenv("PRICE_CHECK_INTERVAL_MINUTES", "60"))),
             "options": {"queue": "scraper"},
         },
         "process-notifications": {
             "task": "tasks.notifications.process_pending_notifications",
-            # "schedule": timedelta(minutes=int(os.getenv("NOTIFICATION_SEND_INTERVAL_MINUTES", "5"))),
-            "schedule": timedelta(seconds=int(os.getenv("PRICE_CHECK_INTERVAL_SECONDS", "60"))), # TODO
+            "schedule": timedelta(minutes=int(os.getenv("NOTIFICATION_SEND_INTERVAL_MINUTES", "5"))),
             "options": {"queue": "notifications"},
         },
         "cleanup-old-notifications": {
@@ -68,7 +66,6 @@ app.conf.update(
 
 # Import tasks to register them
 from tasks import scraper, notifications
-# from tasks import scraper
 
 # Auto-discover tasks
 # app.autodiscover_tasks(["tasks"])
