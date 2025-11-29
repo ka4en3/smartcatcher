@@ -108,7 +108,6 @@ async def test_product_price_history(client: AsyncClient, auth_headers: dict, ad
         json=product_data,
         headers=admin_headers
     )
-    # print(create_response.json())
     assert create_response.status_code == 201
     product_id = create_response.json()["id"]
 

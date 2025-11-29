@@ -1,5 +1,6 @@
 # services/demo_server/main.py
-
+import logging
+import sys
 from pathlib import Path
 
 from fastapi import FastAPI, Request, HTTPException
@@ -7,6 +8,14 @@ from fastapi.templating import Jinja2Templates
 from contextlib import asynccontextmanager
 import random
 import asyncio
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    stream=sys.stdout,
+)
+logger = logging.getLogger(__name__)
 
 current_dir = Path(__file__).parent
 templates = Jinja2Templates(directory=str(current_dir / "templates"))
@@ -57,7 +66,7 @@ async def update_all_prices():
             max_price = base * (1 + variation)
             new_price = round(random.uniform(min_price, max_price), 2)
             current_prices[key] = new_price
-            print(f"[Demo Server] {key.capitalize()} price updated to: ${new_price}")
+            logger.info(f"[Demo Server] {key.capitalize()} price updated to: ${new_price}")
         await asyncio.sleep(UPDATE_PRICE_INTERVAL)
 
 
@@ -108,7 +117,7 @@ async def set_price(product_id: str, price: float):
         raise HTTPException(status_code=400, detail="Price must be positive")
 
     current_prices[product_id] = round(price, 2)
-    print(f"[Demo Server] {product_id} price manually set to: ${price:.2f}")
+    logger.info(f"[Demo Server] {product_id} price manually set to: ${price:.2f}")
     return {"product": product_id, "price": f"${price:.2f}"}
 
 
