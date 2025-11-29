@@ -155,7 +155,7 @@ async def send_price_drop_notification(
             return None
         
         # Parse price information from notification message
-        # This is a simplified implementation - in production you might want to store more structured data # TODO
+        # This is a simplified implementation -> might want to store more structured data # TODO
         message_text = "🔔 <b>Price Alert!</b>\n\n"
         message_text += f"📦 <b>{product.title}</b>\n\n"
         message_text += f"{notification.message}\n\n"
