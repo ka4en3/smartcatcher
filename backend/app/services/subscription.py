@@ -2,6 +2,7 @@
 
 from typing import Optional
 
+from fastapi import HTTPException, status
 from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -12,6 +13,8 @@ from app.services.product import ProductService
 
 from app.core.exceptions import ValidationException, SubscriptionNotFoundException
 
+from app.config import logger
+
 
 class SubscriptionService:
     """Subscription service."""
@@ -21,18 +24,32 @@ class SubscriptionService:
         self.product_service = ProductService(session)
 
     async def create_subscription(
-        self, user_id: int, subscription_data: SubscriptionCreate
+            self, user_id: int, subscription_data: SubscriptionCreate
     ) -> Subscription:
         """Create new subscription."""
         # Handle product subscription
         if subscription_data.subscription_type == SubscriptionType.PRODUCT:
             product_id = subscription_data.product_id
-            
+            # normalize product_url
+            subscription_data.product_url = subscription_data.product_url.strip().lower()
+
             # If product_url is provided, find or create product
             if subscription_data.product_url and not product_id:
                 product = await self.product_service.get_by_url(subscription_data.product_url)
+                # create product if not found
                 if not product:
-                    product = self.product_service.create_by_url(subscription_data.product_url)
+                    try:
+                        product = await self.product_service.create_by_url(subscription_data.product_url)
+                    except ValidationException as e:
+                        raise HTTPException(
+                            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                            detail=str(e),
+                        )
+                    except Exception as e:
+                        raise HTTPException(
+                            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=str(e),
+                        )
                 product_id = product.id
 
             subscription = Subscription(
@@ -43,7 +60,7 @@ class SubscriptionService:
                 percentage_threshold=subscription_data.percentage_threshold,
                 is_active=True,
             )
-        
+
         # Handle brand subscription
         elif subscription_data.subscription_type == SubscriptionType.BRAND:
             subscription = Subscription(
@@ -54,7 +71,7 @@ class SubscriptionService:
                 percentage_threshold=subscription_data.percentage_threshold,
                 is_active=True,
             )
-        
+
         else:
             raise ValidationException("Invalid subscription type")
 
@@ -74,15 +91,15 @@ class SubscriptionService:
         return result.scalar_one_or_none()
 
     async def list_user_subscriptions(
-        self,
-        user_id: int,
-        skip: int = 0,
-        limit: int = 100,
-        active_only: bool = True,
+            self,
+            user_id: int,
+            skip: int = 0,
+            limit: int = 100,
+            active_only: bool = True,
     ) -> list[Subscription]:
         """List user subscriptions."""
         stmt = select(Subscription).where(Subscription.user_id == user_id)
-        
+
         if active_only:
             stmt = stmt.where(Subscription.is_active == True)
 
@@ -97,7 +114,7 @@ class SubscriptionService:
         return result.scalars().all()
 
     async def update(
-        self, subscription_id: int, subscription_update: SubscriptionUpdate
+            self, subscription_id: int, subscription_update: SubscriptionUpdate
     ) -> Subscription:
         """Update subscription."""
         subscription = await self.get_by_id(subscription_id)
