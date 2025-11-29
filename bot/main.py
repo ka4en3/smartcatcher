@@ -1,9 +1,11 @@
+# ============================================================================
 # bot/main.py
+# ============================================================================
 
 import asyncio
 import logging
 import sys
-from typing import Any, Awaitable, Callable, Dict
+import os
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -27,39 +29,38 @@ logger = logging.getLogger(__name__)
 async def main() -> None:
     """Main bot function."""
     # Get bot token from environment
-    import os
-    
     bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not bot_token:
         logger.error("TELEGRAM_BOT_TOKEN environment variable not set")
         return
 
     backend_url = os.getenv("BACKEND_URL", "http://localhost:8000")
-    
+
     # Initialize bot and dispatcher
     bot = Bot(
         token=bot_token,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
-    
+
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
-    
+
     # Initialize API client
     api_client = APIClient(backend_url)
-    
+
     # Setup middleware
-    dp.message.middleware(AuthMiddleware(api_client))
-    dp.callback_query.middleware(AuthMiddleware(api_client))
-    
+    auth_middleware = AuthMiddleware(api_client)
+    dp.message.middleware(auth_middleware)
+    dp.callback_query.middleware(auth_middleware)
+
     # Include routers
     dp.include_router(start.router)
     dp.include_router(subscription.router)
     dp.include_router(notifications.router)
-    
+
     # Store API client in dispatcher data
     dp["api_client"] = api_client
-    
+
     try:
         logger.info("Starting bot...")
         await dp.start_polling(bot)
