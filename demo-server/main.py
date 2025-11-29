@@ -8,9 +8,10 @@ from contextlib import asynccontextmanager
 import random
 import asyncio
 
-# app.mount("/static", StaticFiles(directory="static"), name="static")
 current_dir = Path(__file__).parent
 templates = Jinja2Templates(directory=str(current_dir / "templates"))
+
+UPDATE_PRICE_INTERVAL = 60
 
 # products config
 PRODUCTS = {
@@ -34,20 +35,20 @@ PRODUCTS = {
     }
 }
 
-# Хранение текущих цен
+# Storing current prices
 current_prices = {key: info["base_price"] for key, info in PRODUCTS.items()}
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Фоновая задача: обновляет цены каждые 60 секунд"""
+    """Background task: updates prices every 60 seconds"""
     task = asyncio.create_task(update_all_prices())
     yield
     task.cancel()
 
 
 async def update_all_prices():
-    """Каждые 60 секунд случайно меняет цену каждого товара ±10%"""
+    """The price of each item is randomly changed by ±10%"""
     while True:
         for key in PRODUCTS.keys():
             base = current_prices[key]
@@ -57,7 +58,7 @@ async def update_all_prices():
             new_price = round(random.uniform(min_price, max_price), 2)
             current_prices[key] = new_price
             print(f"[Demo Server] {key.capitalize()} price updated to: ${new_price}")
-        await asyncio.sleep(60)
+        await asyncio.sleep(UPDATE_PRICE_INTERVAL)
 
 
 app = FastAPI(title="SmartCatcher Demo Server",
@@ -66,7 +67,7 @@ app = FastAPI(title="SmartCatcher Demo Server",
 
 @app.get("/")
 async def index():
-    """Редирект или список товаров"""
+    """Redirect or product list"""
     return {"message": "Demo server running", "products": [f"/{k}" for k in PRODUCTS]}
 
 
