@@ -100,8 +100,8 @@ async def process_login_credentials(
         token_storage: Any
 ) -> None:
     """Process login credentials."""
-    # Immediately try to delete the message
-    message_to_delete = message.message_id
+    # # Immediately try to delete the message
+    # message_to_delete = message.message_id
 
     try:
         # Parse credentials
