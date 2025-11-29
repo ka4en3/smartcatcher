@@ -21,16 +21,34 @@ class SubscriptionStates(StatesGroup):
     waiting_for_threshold = State()
 
 
+def require_auth(handler):
+    """Decorator to require authentication."""
+    async def wrapper(message: types.Message, *args, access_token: str = None, **kwargs):
+        if not access_token:
+            await message.answer(
+                "❌ Please link your account first using /start\n\n"
+                "You need to authenticate before using this command."
+            )
+            return
+        return await handler(message, *args, access_token=access_token, **kwargs)
+    return wrapper
+
+
 @router.message(Command("subscribe"))
-async def subscribe_command(message: types.Message, state: FSMContext, api_client: APIClient,
-                            user_token: str = None) -> None:
+async def subscribe_command(
+    message: types.Message,
+    state: FSMContext,
+    api_client: APIClient,
+    access_token: str = None,
+    is_authenticated: bool = False
+) -> None:
     """Handle /subscribe command."""
-    if not user_token:
+    if not is_authenticated or not access_token:
         await message.answer("❌ Please link your account first using /start")
         return
 
     # Extract URL from command
-    command_parts = message.text.split(" ", 1)
+    command_parts = message.text.split(maxsplit=1)
     if len(command_parts) < 2:
         help_text = "🔗 <b>Subscribe to Product</b>\n\n"
         help_text += "Please provide a product URL:\n"
@@ -52,12 +70,12 @@ async def subscribe_command(message: types.Message, state: FSMContext, api_clien
         await message.answer("❌ Invalid URL format. Please provide a valid HTTP/HTTPS URL.")
         return
 
-    # Store URL in state
-    await state.update_data(product_url=product_url)
+    # Store URL and token in state
+    await state.update_data(product_url=product_url, access_token=access_token)
 
     # Ask for price threshold
     threshold_text = "💰 <b>Set Price Threshold</b>\n\n"
-    threshold_text += f"Product URL: <code>{product_url}</code>\n\n"
+    threshold_text += f"Product URL: <code>{product_url[:80]}...</code>\n\n"
     threshold_text += "Please set a price threshold. You'll be notified when the price drops below this amount.\n\n"
     threshold_text += "Enter threshold amount (e.g., <code>100</code> or <code>99.99</code>):"
 
@@ -66,34 +84,37 @@ async def subscribe_command(message: types.Message, state: FSMContext, api_clien
 
 
 @router.message(SubscriptionStates.waiting_for_threshold)
-async def process_threshold(message: types.Message, state: FSMContext, api_client: APIClient,
-                            user_token: str = None) -> None:
+async def process_threshold(
+    message: types.Message,
+    state: FSMContext,
+    api_client: APIClient
+) -> None:
     """Process price threshold."""
-    if not user_token:
-        await message.answer("❌ Authentication lost. Please start over with /start")
-        await state.clear()
-        return
-
     try:
+        # Get stored data
+        data = await state.get_data()
+        product_url = data.get("product_url")
+        access_token = data.get("access_token")
+
+        if not product_url or not access_token:
+            await message.answer("❌ Session expired. Please start over with /subscribe")
+            await state.clear()
+            return
+
         # Parse threshold
         threshold_text = message.text.strip()
 
-        # Remove currency symbols
-        threshold_text = re.sub(r'[^\d.,]', '', threshold_text)
-        threshold_text = threshold_text.replace(',', '')
+        # Remove currency symbols and commas
+        threshold_text = re.sub(r'[^\d.]', '', threshold_text)
 
-        threshold = float(threshold_text)
-        if threshold <= 0:
-            await message.answer("❌ Threshold must be greater than 0. Please try again.")
+        try:
+            threshold = float(threshold_text)
+        except ValueError:
+            await message.answer("❌ Invalid number format. Please enter a valid amount (e.g., 100 or 99.99).")
             return
 
-        # Get stored URL
-        data = await state.get_data()
-        product_url = data.get("product_url")
-
-        if not product_url:
-            await message.answer("❌ Session expired. Please start over with /subscribe")
-            await state.clear()
+        if threshold <= 0:
+            await message.answer("❌ Threshold must be greater than 0. Please try again.")
             return
 
         # Create subscription
@@ -106,11 +127,11 @@ async def process_threshold(message: types.Message, state: FSMContext, api_clien
         loading_msg = await message.answer("⏳ Creating subscription...")
 
         try:
-            subscription = await api_client.create_subscription(user_token, subscription_data)
+            subscription = await api_client.create_subscription(access_token, subscription_data)
 
             if subscription:
                 success_text = "✅ <b>Subscription Created!</b>\n\n"
-                success_text += f"🔗 URL: <code>{product_url[:50]}...</code>\n"
+                success_text += f"🔗 URL: <code>{product_url[:60]}...</code>\n"
                 success_text += f"💰 Threshold: <code>${threshold:.2f}</code>\n"
                 success_text += f"🆔 Subscription ID: <code>{subscription['id']}</code>\n\n"
                 success_text += "🔔 You'll receive notifications when the price drops below your threshold!"
@@ -120,6 +141,7 @@ async def process_threshold(message: types.Message, state: FSMContext, api_clien
             else:
                 await loading_msg.edit_text(
                     "❌ Failed to create subscription. The product might not be found or already tracked.")
+                await state.clear()
 
         except Exception as e:
             logger.error(f"Error creating subscription: {e}")
@@ -130,23 +152,28 @@ async def process_threshold(message: types.Message, state: FSMContext, api_clien
                 error_text += "Please try again later or contact support."
 
             await loading_msg.edit_text(error_text)
+            await state.clear()
 
-    except ValueError:
-        await message.answer("❌ Invalid threshold format. Please enter a valid number (e.g., 100 or 99.99).")
     except Exception as e:
         logger.error(f"Error processing threshold: {e}")
         await message.answer("❌ An error occurred. Please try again.")
+        await state.clear()
 
 
 @router.message(Command("list"))
-async def list_subscriptions(message: types.Message, api_client: APIClient, user_token: str = None) -> None:
+async def list_subscriptions(
+    message: types.Message,
+    api_client: APIClient,
+    access_token: str = None,
+    is_authenticated: bool = False
+) -> None:
     """Handle /list command."""
-    if not user_token:
+    if not is_authenticated or not access_token:
         await message.answer("❌ Please link your account first using /start")
         return
 
     try:
-        subscriptions = await api_client.get_user_subscriptions(user_token)
+        subscriptions = await api_client.get_user_subscriptions(access_token)
 
         if not subscriptions:
             empty_text = "📭 <b>No Subscriptions</b>\n\n"
@@ -169,34 +196,37 @@ async def list_subscriptions(message: types.Message, api_client: APIClient, user
             if product_id:
                 # Try to get product details
                 try:
-                    product = await api_client.get_product(user_token, product_id)
+                    product = await api_client.get_product(access_token, product_id)
                     if product:
                         title = product.get("title", "Unknown Product")[:40]
                         current_price = product.get("current_price")
                         currency = product.get("currency", "USD")
 
                         list_text += f"<code>{title}</code>\n"
-                        if current_price:
-                            list_text += f"   💰 Current: ${current_price} {currency}\n"
-                        if threshold:
-                            list_text += f"   🎯 Threshold: ${threshold}\n"
+                        if current_price is not None:
+                            list_text += f"   💰 Current: ${current_price:.2f} {currency}\n"
+                        if threshold is not None:
+                            list_text += f"   🎯 Threshold: ${threshold:.2f}\n"
                         list_text += f"   🆔 ID: <code>{subscription_id}</code>\n\n"
                     else:
                         list_text += f"Product ID: {product_id}\n"
-                        list_text += f"   🎯 Threshold: ${threshold}\n"
+                        if threshold is not None:
+                            list_text += f"   🎯 Threshold: ${threshold:.2f}\n"
                         list_text += f"   🆔 ID: <code>{subscription_id}</code>\n\n"
-                except Exception:
+                except Exception as e:
+                    logger.warning(f"Failed to fetch product {product_id}: {e}")
                     list_text += f"Product ID: {product_id}\n"
-                    list_text += f"   🎯 Threshold: ${threshold}\n"
+                    if threshold is not None:
+                        list_text += f"   🎯 Threshold: ${threshold:.2f}\n"
                     list_text += f"   🆔 ID: <code>{subscription_id}</code>\n\n"
             else:
                 list_text += f"Subscription ID: {subscription_id}\n"
-                if threshold:
-                    list_text += f"   🎯 Threshold: ${threshold}\n\n"
+                if threshold is not None:
+                    list_text += f"   🎯 Threshold: ${threshold:.2f}\n\n"
 
         list_text += "💡 Use <code>/unsubscribe &lt;ID&gt;</code> to remove a subscription."
 
-        # Split message if too long
+        # Split message if too long (Telegram limit is 4096 characters)
         if len(list_text) > 4000:
             parts = [list_text[i:i + 4000] for i in range(0, len(list_text), 4000)]
             for part in parts:
@@ -210,14 +240,19 @@ async def list_subscriptions(message: types.Message, api_client: APIClient, user
 
 
 @router.message(Command("unsubscribe"))
-async def unsubscribe_command(message: types.Message, api_client: APIClient, user_token: str = None) -> None:
+async def unsubscribe_command(
+    message: types.Message,
+    api_client: APIClient,
+    access_token: str = None,
+    is_authenticated: bool = False
+) -> None:
     """Handle /unsubscribe command."""
-    if not user_token:
+    if not is_authenticated or not access_token:
         await message.answer("❌ Please link your account first using /start")
         return
 
     # Extract subscription ID from command
-    command_parts = message.text.split(" ", 1)
+    command_parts = message.text.split(maxsplit=1)
     if len(command_parts) < 2:
         help_text = "🗑️ <b>Unsubscribe</b>\n\n"
         help_text += "Please provide a subscription ID:\n"
@@ -257,9 +292,14 @@ async def unsubscribe_command(message: types.Message, api_client: APIClient, use
 
 
 @router.callback_query(lambda c: c.data.startswith("unsubscribe_"))
-async def confirm_unsubscribe(callback: types.CallbackQuery, api_client: APIClient, user_token: str = None) -> None:
+async def confirm_unsubscribe(
+    callback: types.CallbackQuery,
+    api_client: APIClient,
+    access_token: str = None,
+    is_authenticated: bool = False
+) -> None:
     """Handle unsubscribe confirmation."""
-    if not user_token:
+    if not is_authenticated or not access_token:
         await callback.message.edit_text("❌ Authentication lost. Please start over with /start")
         await callback.answer()
         return
@@ -268,7 +308,7 @@ async def confirm_unsubscribe(callback: types.CallbackQuery, api_client: APIClie
         subscription_id = int(callback.data.split("_")[1])
 
         # Delete subscription
-        success = await api_client.delete_subscription(user_token, subscription_id)
+        success = await api_client.delete_subscription(access_token, subscription_id)
 
         if success:
             success_text = "✅ <b>Unsubscribed Successfully</b>\n\n"

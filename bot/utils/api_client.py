@@ -20,20 +20,20 @@ class APIClient:
         await self.client.aclose()
 
     async def _make_request(
-        self,
-        method: str,
-        endpoint: str,
-        data: Optional[Dict] = None,
-        headers: Optional[Dict] = None,
-        token: Optional[str] = None,
+            self,
+            method: str,
+            endpoint: str,
+            data: Optional[Dict] = None,
+            headers: Optional[Dict] = None,
+            token: Optional[str] = None,
     ) -> Optional[Dict]:
         """Make HTTP request to backend."""
         url = f"{self.base_url}{endpoint}"
-        
+
         request_headers = {"Content-Type": "application/json"}
         if headers:
             request_headers.update(headers)
-        
+
         if token:
             request_headers["Authorization"] = f"Bearer {token}"
 
@@ -44,15 +44,21 @@ class APIClient:
                 json=data,
                 headers=request_headers,
             )
-            
+
             if response.status_code in [200, 201]:
                 return response.json()
             elif response.status_code == 204:
                 return {"success": True}
+            elif response.status_code == 404:
+                logger.info(f"Resource not found: {endpoint}")
+                return None
             else:
                 logger.error(f"API request failed: {response.status_code} - {response.text}")
                 return None
-                
+
+        except httpx.TimeoutException:
+            logger.error(f"API request timeout: {endpoint}")
+            return None
         except Exception as e:
             logger.error(f"API request error: {e}")
             return None
@@ -74,20 +80,22 @@ class APIClient:
 
     async def get_user_by_telegram_id(self, telegram_user_id: int) -> Optional[Dict]:
         """Get user by Telegram ID."""
-        # This endpoint doesn't exist in API yet, need to implement it # TODO
-        # For now, return None
-        logger.warning("get_user_by_telegram_id not implemented in backend")
-        return None
+        return await self._make_request(
+            "GET",
+            f"/users/by-telegram/{telegram_user_id}"
+        )
 
     async def link_telegram_account(
-        self, access_token: str, telegram_user_id: int, telegram_username: Optional[str] = None
+            self, access_token: str, telegram_user_id: int, telegram_username: Optional[str] = None
     ) -> bool:
         """Link Telegram account to user."""
         data = {
             "telegram_user_id": telegram_user_id,
-            "telegram_username": telegram_username,
         }
-        
+
+        if telegram_username:
+            data["telegram_username"] = telegram_username
+
         result = await self._make_request(
             "PATCH", "/users/me", data, token=access_token
         )
@@ -98,7 +106,7 @@ class APIClient:
         return await self._make_request("GET", "/users/me", token=access_token)
 
     async def create_subscription(
-        self, access_token: str, subscription_data: Dict
+            self, access_token: str, subscription_data: Dict
     ) -> Optional[Dict]:
         """Create subscription."""
         return await self._make_request(
@@ -123,19 +131,19 @@ class APIClient:
         )
 
     async def get_products(
-        self,
-        access_token: str,
-        skip: int = 0,
-        limit: int = 100,
-        search: Optional[str] = None,
+            self,
+            access_token: str,
+            skip: int = 0,
+            limit: int = 100,
+            search: Optional[str] = None,
     ) -> Optional[List[Dict]]:
         """Get products list."""
         params = {"skip": skip, "limit": limit}
         if search:
             params["search"] = search
-        
+
         # Convert params to query string
         query_params = "&".join([f"{k}={v}" for k, v in params.items()])
         endpoint = f"/products?{query_params}"
-        
+
         return await self._make_request("GET", endpoint, token=access_token)

@@ -43,3 +43,36 @@ async def update_current_user_profile(
             detail=str(e),
         )
     return UserRead.model_validate(updated_user, from_attributes=True)
+
+
+@router.get("/by-telegram/{telegram_user_id}", response_model=UserRead)
+async def get_user_by_telegram_id(
+        telegram_user_id: int,
+        session: AsyncSession = Depends(get_session),
+) -> UserRead:
+    """
+    Get user by Telegram user ID.
+
+    This endpoint is used by the Telegram bot to check if a user is already linked.
+    It does not require authentication to allow the bot to verify user status.
+
+    Note: In production, you should secure this endpoint with API key authentication
+    to prevent unauthorized access.
+    """
+    user_service = UserService(session)
+
+    user = await user_service.get_by_telegram_user_id(telegram_user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User with this Telegram ID not found",
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account is inactive",
+        )
+
+    return UserRead.model_validate(user, from_attributes=True)
