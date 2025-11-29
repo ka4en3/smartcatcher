@@ -1,10 +1,20 @@
 # backend/app/config.py
+import logging
 import os
+import sys
 from functools import lru_cache
 from typing import Any, Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    stream=sys.stdout,
+)
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -76,7 +86,7 @@ class Settings(BaseSettings):
         default=60, description="Price check interval in minutes"
     )
     price_check_interval_seconds: int = Field(
-        default=60*60, description="Price check interval in seconds"
+        default=60 * 60, description="Price check interval in seconds"
     )
 
     # Debug and logging
@@ -86,7 +96,7 @@ class Settings(BaseSettings):
     # Environment
     environment: str = Field(default="development", description="Environment name")
 
-    model_config = SettingsConfigDict(env_file = os.getenv("ENV_FILE", ".env"), case_sensitive=False)
+    model_config = SettingsConfigDict(env_file=os.getenv("ENV_FILE", ".env"), case_sensitive=False)
 
     @field_validator("database_url", mode="before")
     def validate_database_url(cls, v: str) -> str:
