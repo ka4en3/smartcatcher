@@ -1,9 +1,9 @@
 # services/demo_server/main.py
+
 from pathlib import Path
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import random
 import asyncio
