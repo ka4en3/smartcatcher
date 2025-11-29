@@ -89,10 +89,10 @@ async def async_check_all_product_prices():
                                     f"{old_price} -> {scraped_data.price}"
                                 )
 
-                                # Check for price drop notifications TODO
-                                # await check_price_drop_notifications(
-                                #     session, product.id, old_price, scraped_data.price, scraped_data.currency
-                                # )
+                                # Check for price drop notifications
+                                await check_price_drop_notifications(
+                                    session, product.id, old_price, scraped_data.price, scraped_data.currency
+                                )
 
                                 updated_count += 1
 

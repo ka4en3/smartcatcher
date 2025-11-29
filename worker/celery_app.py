@@ -41,7 +41,7 @@ app.conf.update(
     # Task routing
     task_routes={
         "tasks.scraper.*": {"queue": "scraper"},
-        # "tasks.notifications.*": {"queue": "notifications"}, # TODO
+        "tasks.notifications.*": {"queue": "notifications"},
     },
 
     # Beat schedule for periodic tasks
@@ -52,23 +52,23 @@ app.conf.update(
             "schedule": timedelta(seconds=int(os.getenv("PRICE_CHECK_INTERVAL_SECONDS", "60"))),
             "options": {"queue": "scraper"},
         },
-        # TODO
-        # "process-notifications": {
-        #     "task": "tasks.notifications.process_pending_notifications",
-        #     "schedule": timedelta(minutes=5),  # Check every 5 minutes
-        #     "options": {"queue": "notifications"},
-        # },
-        # "cleanup-old-notifications": {
-        #     "task": "tasks.notifications.cleanup_old_notifications",
-        #     "schedule": crontab(hour=2, minute=0),  # Daily at 2 AM
-        #     "options": {"queue": "notifications"},
-        # },
+        "process-notifications": {
+            "task": "tasks.notifications.process_pending_notifications",
+            # "schedule": timedelta(minutes=int(os.getenv("NOTIFICATION_SEND_INTERVAL_MINUTES", "5"))),
+            "schedule": timedelta(seconds=int(os.getenv("PRICE_CHECK_INTERVAL_SECONDS", "60"))), # TODO
+            "options": {"queue": "notifications"},
+        },
+        "cleanup-old-notifications": {
+            "task": "tasks.notifications.cleanup_old_notifications",
+            "schedule": crontab(hour=2, minute=0),  # Daily at 2 AM
+            "options": {"queue": "notifications"},
+        },
     },
 )
 
 # Import tasks to register them
-# from worker.tasks import scraper, notifications   # TODO
-from tasks import scraper
+from tasks import scraper, notifications
+# from tasks import scraper
 
 # Auto-discover tasks
 # app.autodiscover_tasks(["tasks"])

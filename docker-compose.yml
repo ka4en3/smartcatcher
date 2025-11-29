@@ -68,14 +68,6 @@ services:
     container_name: smartcatcher_worker
     env_file:
       - .env
-#    environment:
-#      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
-#      - REDIS_URL=redis://redis:6379
-#      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecretjwtkey}
-#      - EBAY_CLIENT_ID=${EBAY_CLIENT_ID}
-#      - EBAY_CLIENT_SECRET=${EBAY_CLIENT_SECRET}
-#      - ETSY_API_KEY=${ETSY_API_KEY}
-#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     depends_on:
       postgres:
         condition: service_healthy
@@ -85,7 +77,7 @@ services:
       - ./worker:/app/worker
       - ./backend:/app/backend
       - ./examples:/app/examples
-    command: celery -A worker.celery_app worker -Q scraper --loglevel=info
+    command: celery -A worker.celery_app worker -Q scraper,notifications --loglevel=info
 
   scheduler:
     build:
@@ -94,14 +86,6 @@ services:
     container_name: smartcatcher_scheduler
     env_file:
       - .env
-#    environment:
-#      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
-#      - REDIS_URL=redis://redis:6379
-#      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-supersecretjwtkey}
-#      - EBAY_CLIENT_ID=${EBAY_CLIENT_ID}
-#      - EBAY_CLIENT_SECRET=${EBAY_CLIENT_SECRET}
-#      - ETSY_API_KEY=${ETSY_API_KEY}
-#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     depends_on:
       postgres:
         condition: service_healthy
