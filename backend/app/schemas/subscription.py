@@ -1,7 +1,7 @@
 # backend/app/schemas/subscription.py
 
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, Self
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
