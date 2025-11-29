@@ -74,7 +74,7 @@ class APIClient:
 
     async def get_user_by_telegram_id(self, telegram_user_id: int) -> Optional[Dict]:
         """Get user by Telegram ID."""
-        # This endpoint doesn't exist in our API yet, so we'll need to implement it
+        # This endpoint doesn't exist in API yet, need to implement it # TODO
         # For now, return None
         logger.warning("get_user_by_telegram_id not implemented in backend")
         return None

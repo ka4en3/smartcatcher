@@ -39,8 +39,7 @@ class AuthMiddleware(BaseMiddleware):
             
             if user_data:
                 # User is linked, try to get a fresh token
-                # This is a simplified approach - in production, you might want to
-                # store tokens securely and refresh them as needed
+                # This is a simplified approach -> might want to store tokens securely and refresh them as needed # TODO
                 logger.info(f"User {user_id} is authenticated")
                 # For now, we'll pass the user_data instead of token
                 # The handlers will need to handle authentication differently
