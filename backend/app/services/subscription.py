@@ -30,11 +30,10 @@ class SubscriptionService:
         # Handle product subscription
         if subscription_data.subscription_type == SubscriptionType.PRODUCT:
             product_id = subscription_data.product_id
-            # normalize product_url
-            subscription_data.product_url = subscription_data.product_url.strip().lower()
 
             # If product_url is provided, find or create product
             if subscription_data.product_url and not product_id:
+                subscription_data.product_url = subscription_data.product_url.strip().lower() # normalize product_url
                 product = await self.product_service.get_by_url(subscription_data.product_url)
                 # create product if not found
                 if not product:
