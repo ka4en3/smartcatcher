@@ -4,23 +4,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install UV
-RUN pip install uv
+ENV PATH="/app/.venv/bin:${PATH}"
 
-# Copy dependency files from root
-COPY pyproject.toml ./
-COPY uv.lock ./
+COPY . ./bot/
 
-# Install dependencies
-RUN uv sync --no-dev
+ENV PYTHONPATH="/app:$PYTHONPATH"
 
-# Copy bot code
-COPY bot/ ./
-
-# Run the bot
-CMD ["uv", "run", "python", "main.py"]
+CMD ["python", "bot/main.py"]
