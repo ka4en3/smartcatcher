@@ -25,8 +25,7 @@ ENV PATH="/app/.venv/bin:${PATH}"
 # Copy backend
 COPY backend/ ./backend/
 
-# Set PYTHONPATH to include worker and tasks
-#ENV PYTHONPATH="/backend:/worker"
+# Set PYTHONPATH to include app/
 ENV PYTHONPATH="/app:$PYTHONPATH"
 
 # Expose port
