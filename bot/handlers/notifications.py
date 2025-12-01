@@ -1,27 +1,22 @@
-# bot/handlers/notifications.py
-
 import logging
-from typing import Any
+from typing import Any, Optional
 
-from aiogram import Router, types
+from aiogram import Bot
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from utils.api_client import APIClient
-
 logger = logging.getLogger(__name__)
-router = Router()
 
 
 async def send_price_drop_notification(
-        bot: types.Bot,
+        bot: Bot,
         user_telegram_id: int,
         product_title: str,
         old_price: float,
         new_price: float,
         currency: str,
         product_url: str,
-        affiliate_link: str = None
-) -> int:
+        affiliate_link: Optional[str] = None
+) -> Optional[int]:
     """Send price drop notification to user."""
     try:
         # Calculate discount
@@ -65,15 +60,15 @@ async def send_price_drop_notification(
 
 
 async def send_threshold_notification(
-        bot: types.Bot,
+        bot: Bot,
         user_telegram_id: int,
         product_title: str,
         current_price: float,
         threshold: float,
         currency: str,
         product_url: str,
-        affiliate_link: str = None
-) -> int:
+        affiliate_link: Optional[str] = None
+) -> Optional[int]:
     """Send threshold reached notification to user."""
     try:
         # Format notification message
@@ -112,11 +107,11 @@ async def send_threshold_notification(
 
 
 async def send_error_notification(
-        bot: types.Bot,
+        bot: Bot,
         user_telegram_id: int,
         error_message: str,
-        subscription_id: int = None
-) -> int:
+        subscription_id: Optional[int] = None
+) -> Optional[int]:
     """Send error notification to user."""
     try:
         # Format notification message
@@ -140,12 +135,12 @@ async def send_error_notification(
 
 
 async def send_product_available_notification(
-        bot: types.Bot,
+        bot: Bot,
         user_telegram_id: int,
         product_title: str,
         product_url: str,
-        affiliate_link: str = None
-) -> int:
+        affiliate_link: Optional[str] = None
+) -> Optional[int]:
     """Send product availability notification to user."""
     try:
         # Format notification message
