@@ -1,8 +1,7 @@
-# bot/handlers/subscription.py
-
 import logging
 import re
 from typing import Any
+from functools import wraps
 
 from aiogram import Router, types
 from aiogram.filters import Command
@@ -23,18 +22,20 @@ class SubscriptionStates(StatesGroup):
 
 def require_auth(handler):
     """Decorator to require authentication."""
-    async def wrapper(message: types.Message, *args, access_token: str = None, **kwargs):
-        if not access_token:
+    @wraps(handler)
+    async def wrapper(message: types.Message, *args, access_token: str = None, is_authenticated: bool = False, **kwargs):
+        if not is_authenticated or not access_token:
             await message.answer(
                 "❌ Please link your account first using /start\n\n"
                 "You need to authenticate before using this command."
             )
             return
-        return await handler(message, *args, access_token=access_token, **kwargs)
+        return await handler(message, *args, access_token=access_token, is_authenticated=is_authenticated, **kwargs)
     return wrapper
 
 
 @router.message(Command("subscribe"))
+@require_auth
 async def subscribe_command(
     message: types.Message,
     state: FSMContext,
@@ -43,9 +44,6 @@ async def subscribe_command(
     is_authenticated: bool = False
 ) -> None:
     """Handle /subscribe command."""
-    if not is_authenticated or not access_token:
-        await message.answer("❌ Please link your account first using /start")
-        return
 
     # Extract URL from command
     command_parts = message.text.split(maxsplit=1)
@@ -161,6 +159,7 @@ async def process_threshold(
 
 
 @router.message(Command("list"))
+@require_auth
 async def list_subscriptions(
     message: types.Message,
     api_client: APIClient,
@@ -168,9 +167,6 @@ async def list_subscriptions(
     is_authenticated: bool = False
 ) -> None:
     """Handle /list command."""
-    if not is_authenticated or not access_token:
-        await message.answer("❌ Please link your account first using /start")
-        return
 
     try:
         subscriptions = await api_client.get_user_subscriptions(access_token)
@@ -240,6 +236,7 @@ async def list_subscriptions(
 
 
 @router.message(Command("unsubscribe"))
+@require_auth
 async def unsubscribe_command(
     message: types.Message,
     api_client: APIClient,
@@ -247,9 +244,6 @@ async def unsubscribe_command(
     is_authenticated: bool = False
 ) -> None:
     """Handle /unsubscribe command."""
-    if not is_authenticated or not access_token:
-        await message.answer("❌ Please link your account first using /start")
-        return
 
     # Extract subscription ID from command
     command_parts = message.text.split(maxsplit=1)
