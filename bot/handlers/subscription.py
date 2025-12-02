@@ -1,7 +1,5 @@
 import logging
 import re
-from typing import Any
-from functools import wraps
 
 from aiogram import Router, types
 from aiogram.filters import Command
@@ -20,22 +18,7 @@ class SubscriptionStates(StatesGroup):
     waiting_for_threshold = State()
 
 
-def require_auth(handler):
-    """Decorator to require authentication."""
-    @wraps(handler)
-    async def wrapper(message: types.Message, *args, access_token: str = None, is_authenticated: bool = False, **kwargs):
-        if not is_authenticated or not access_token:
-            await message.answer(
-                "❌ Please link your account first using /start\n\n"
-                "You need to authenticate before using this command."
-            )
-            return
-        return await handler(message, *args, access_token=access_token, is_authenticated=is_authenticated, **kwargs)
-    return wrapper
-
-
 @router.message(Command("subscribe"))
-@require_auth
 async def subscribe_command(
     message: types.Message,
     state: FSMContext,
@@ -44,27 +27,30 @@ async def subscribe_command(
     is_authenticated: bool = False
 ) -> None:
     """Handle /subscribe command."""
+    if not is_authenticated or not access_token:
+        await message.answer("❌ Please link your account first using /start")
+        return
 
     # Extract URL from command
     command_parts = message.text.split(maxsplit=1)
     if len(command_parts) < 2:
         help_text = "🔗 <b>Subscribe to Product</b>\n\n"
         help_text += "Please provide a product URL:\n"
-        help_text += "<code>/subscribe https://webscraper.io/test-sites/e-commerce/scroll/product/70</code></code>\n\n"
+        help_text += "<code>/subscribe https://webscraper.io/test-sites/e-commerce/scroll/product/70</code>\n\n"
         help_text += "<b>Supported sites:</b>\n"
-        help_text += "• eBay (ebay.com)\n"
-        help_text += "• Etsy (etsy.com)\n"
+        help_text += "• eBay\n"
+        help_text += "• Etsy\n"
         help_text += "• WebScraper.io test sites\n"
-        help_text += "• Demo URLs (http://demo-server:8001/)"
+        help_text += "• Demo URLs"
 
         await message.answer(help_text)
         return
 
-    product_url = command_parts[1].strip().lower()
+    product_url = command_parts[1].strip()
 
     # Validate URL format
     url_pattern = r'https?://[^\s]+'
-    if not re.match(url_pattern, product_url) and not "demo-server" in product_url:
+    if (not re.match(url_pattern, product_url)) and (not "demo-server" in product_url):
         await message.answer("❌ Invalid URL format. Please provide a valid HTTP/HTTPS URL.")
         return
 
@@ -73,7 +59,7 @@ async def subscribe_command(
 
     # Ask for price threshold
     threshold_text = "💰 <b>Set Price Threshold</b>\n\n"
-    threshold_text += f"Product URL: <code>{product_url[:80]}...</code>\n\n"
+    threshold_text += f"Product URL:\n<code>{product_url[:80]}</code>\n\n"
     threshold_text += "Please set a price threshold. You'll be notified when the price drops below this amount.\n\n"
     threshold_text += "Enter threshold amount (e.g., <code>100</code> or <code>99.99</code>):"
 
@@ -129,7 +115,7 @@ async def process_threshold(
 
             if subscription:
                 success_text = "✅ <b>Subscription Created!</b>\n\n"
-                success_text += f"🔗 URL: <code>{product_url[:60]}...</code>\n"
+                success_text += f"🔗 URL:\n<code>{product_url[:60]}</code>\n\n"
                 success_text += f"💰 Threshold: <code>${threshold:.2f}</code>\n"
                 success_text += f"🆔 Subscription ID: <code>{subscription['id']}</code>\n\n"
                 success_text += "🔔 You'll receive notifications when the price drops below your threshold!"
@@ -159,7 +145,6 @@ async def process_threshold(
 
 
 @router.message(Command("list"))
-@require_auth
 async def list_subscriptions(
     message: types.Message,
     api_client: APIClient,
@@ -167,6 +152,9 @@ async def list_subscriptions(
     is_authenticated: bool = False
 ) -> None:
     """Handle /list command."""
+    if not is_authenticated or not access_token:
+        await message.answer("❌ Please link your account first using /start")
+        return
 
     try:
         subscriptions = await api_client.get_user_subscriptions(access_token)
@@ -220,7 +208,7 @@ async def list_subscriptions(
                 if threshold is not None:
                     list_text += f"   🎯 Threshold: ${threshold:.2f}\n\n"
 
-        list_text += "💡 Use <code>/unsubscribe &lt;ID&gt;</code> to remove a subscription."
+        list_text += "💡 Use <code>/unsubscribe [ID]</code> to remove a subscription."
 
         # Split message if too long (Telegram limit is 4096 characters)
         if len(list_text) > 4000:
@@ -236,7 +224,6 @@ async def list_subscriptions(
 
 
 @router.message(Command("unsubscribe"))
-@require_auth
 async def unsubscribe_command(
     message: types.Message,
     api_client: APIClient,
@@ -244,6 +231,9 @@ async def unsubscribe_command(
     is_authenticated: bool = False
 ) -> None:
     """Handle /unsubscribe command."""
+    if not is_authenticated or not access_token:
+        await message.answer("❌ Please link your account first using /start")
+        return
 
     # Extract subscription ID from command
     command_parts = message.text.split(maxsplit=1)
