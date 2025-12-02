@@ -43,14 +43,6 @@ services:
     container_name: smartcatcher_backend
     env_file:
       - .env
-#    environment:
-#      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/smartcatcher
-#      - REDIS_URL=redis://redis:6379
-#      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-jwt-key-here-change-in-production}
-#      - EBAY_CLIENT_ID=${EBAY_CLIENT_ID}
-#      - EBAY_CLIENT_SECRET=${EBAY_CLIENT_SECRET}
-#      - ETSY_API_KEY=${ETSY_API_KEY}
-#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     ports:
       - "8000:8000"
     depends_on:
@@ -103,9 +95,6 @@ services:
     container_name: smartcatcher_bot
     env_file:
       - .env
-#    environment:
-#      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-#      - BACKEND_URL=http://backend:8000
     depends_on:
       - backend
     volumes:
