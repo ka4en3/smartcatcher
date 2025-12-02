@@ -29,6 +29,7 @@ services:
 
   demo-server:
     build: ./demo-server
+    container_name: demo-server
     ports:
       - "8001:8001"
     volumes:
@@ -97,20 +98,18 @@ services:
       - ./examples:/app/examples
     command: celery -A worker.celery_app beat --loglevel=info
 
-#  bot:
-#    build:
-#      context: .
-#      dockerfile: ./bot/Dockerfile
-#    container_name: smartcatcher_bot
-#    env_file:
-#      - .env
+  bot:
+    build: ./bot
+    container_name: smartcatcher_bot
+    env_file:
+      - .env
 #    environment:
 #      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
 #      - BACKEND_URL=http://backend:8000
-#    depends_on:
-#      - backend
-#    volumes:
-#      - ./bot:/app
+    depends_on:
+      - backend
+    volumes:
+      - ./bot:/app/bot
 
 volumes:
   postgres_data:
