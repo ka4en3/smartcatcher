@@ -1,2 +1,2 @@
-aiogram~=3.2.0
-httpx~=0.25.2
+aiogram~=3.22.0
+httpx~=0.28.1
