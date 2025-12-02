@@ -190,25 +190,25 @@ async def list_subscriptions(
 
                         list_text += f"<code>{title}</code>\n"
                         if current_price is not None:
-                            list_text += f"   💰 Current: ${current_price:.2f} {currency}\n"
+                            list_text += f"   💰 Current: ${float(current_price):.2f} {currency}\n"
                         if threshold is not None:
-                            list_text += f"   🎯 Threshold: ${threshold:.2f}\n"
+                            list_text += f"   🎯 Threshold: ${float(threshold):.2f}\n"
                         list_text += f"   🆔 ID: <code>{subscription_id}</code>\n\n"
                     else:
                         list_text += f"Product ID: {product_id}\n"
                         if threshold is not None:
-                            list_text += f"   🎯 Threshold: ${threshold:.2f}\n"
+                            list_text += f"   🎯 Threshold: ${float(threshold):.2f}\n"
                         list_text += f"   🆔 ID: <code>{subscription_id}</code>\n\n"
                 except Exception as e:
                     logger.warning(f"Failed to fetch product {product_id}: {e}")
                     list_text += f"Product ID: {product_id}\n"
                     if threshold is not None:
-                        list_text += f"   🎯 Threshold: ${threshold:.2f}\n"
+                        list_text += f"   🎯 Threshold: ${float(threshold):.2f}\n"
                     list_text += f"   🆔 ID: <code>{subscription_id}</code>\n\n"
             else:
                 list_text += f"Subscription ID: {subscription_id}\n"
                 if threshold is not None:
-                    list_text += f"   🎯 Threshold: ${threshold:.2f}\n\n"
+                    list_text += f"   🎯 Threshold: ${float(threshold):.2f}\n\n"
 
         list_text += "💡 Use <code>/unsubscribe [ID]</code> to remove a subscription."
 
