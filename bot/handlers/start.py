@@ -100,9 +100,6 @@ async def process_login_credentials(
         token_storage: Any
 ) -> None:
     """Process login credentials."""
-    # # Immediately try to delete the message
-    # message_to_delete = message.message_id
-
     try:
         # Parse credentials
         credentials = message.text.strip().split(maxsplit=1)
@@ -244,9 +241,9 @@ async def help_command(message: types.Message) -> None:
     help_text += "• /help - Show this help message\n"
     help_text += "• /cancel - Cancel current operation\n\n"
     help_text += "<b>Subscriptions:</b>\n"
-    help_text += "• /subscribe <url> - Subscribe to product\n"
+    help_text += "• /subscribe [url] - Subscribe to product\n"
     help_text += "• /list - Show your subscriptions\n"
-    help_text += "• /unsubscribe <id> - Remove subscription\n\n"
+    help_text += "• /unsubscribe [id] - Remove subscription\n\n"
     help_text += "<b>Example:</b>\n"
     help_text += "<code>/subscribe https://www.ebay.com/itm/123456789</code>\n\n"
     help_text += "💡 <i>You'll receive notifications when prices drop below your threshold!</i>"
