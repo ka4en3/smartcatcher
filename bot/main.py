@@ -10,7 +10,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from handlers import start, subscription, notifications
+from handlers import start, subscription
 from middlewares.auth import AuthMiddleware
 from utils.api_client import APIClient
 
@@ -54,7 +54,6 @@ async def main() -> None:
     # Include routers
     dp.include_router(start.router)
     dp.include_router(subscription.router)
-    dp.include_router(notifications.router)
 
     # Store API client in dispatcher data
     dp["api_client"] = api_client
