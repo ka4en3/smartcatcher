@@ -16,23 +16,48 @@
     </style>
 </head>
 <body>
-    <div class="product-container">
-        <img src="{{ image_url }}" alt="{{ title }}" class="product-image">
-        <div class="product-details">
-            <h1 class="product-title">{{ title }}</h1>
-            <div class="product-brand">Brand: {{ brand }}</div>
-            <div class="product-price price">{{ price }}</div>
-            <p><strong>SKU:</strong> <span style="display:none">{{ sku }}</span></p>
+<div class="product-container">
+    <img src="{{ image_url }}" alt="{{ title }}" class="product-image">
+    <div class="product-details">
+        <h1 class="product-title">{{ title }}</h1>
+        <div class="product-brand">Brand: {{ brand }}</div>
+        <div class="product-price price">{{ price }}</div>
+        <p><strong>SKU:</strong> <span style="display:none">{{ sku }}</span></p>
 
-            <div class="controls">
-                <p>💡 Это демо-страница для SmartCatcher.</p>
-                <p>Цена автоматически меняется каждую минуту.</p>
-                <p>Или установи вручную:</p>
-                <div class="endpoint">
-                    POST /set-price/{{ product_id }}/новая_цена
-                </div>
-            </div>
+        <div class="controls">
+            <p>🔧 This is a demo page for SmartCatcher.</p>
+            <p>The price changes automatically every minute.</p>
+            <p>Or set manually:</p>
+
+            <form id="priceForm" style="margin-top: 10px;">
+                <input type="number" id="newPrice" name="price" step="0.01" min="0.01"
+                       placeholder="Enter new price" style="padding: 8px; width: 150px;">
+                <button type="submit" style="padding: 8px 16px; cursor: pointer;">Set Price</button>
+            </form>
+            <div id="result" style="margin-top: 10px; color: green;"></div>
+
+            <script>
+                document.getElementById('priceForm').addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const price = document.getElementById('newPrice').value;
+
+                    try {
+                        const response = await fetch(`/set-price/{{ product_id }}/${price}`, {
+                            method: 'POST'
+                        });
+                        const data = await response.json();
+                        document.getElementById('result').textContent = `✓ Price updated to ${data.price}`;
+                        document.querySelector('.product-price').textContent = data.price;
+                        document.getElementById('newPrice').value = '';
+                    } catch (error) {
+                        document.getElementById('result').textContent = '✗ Error setting price';
+                        document.getElementById('result').style.color = 'red';
+                    }
+                });
+            </script>
         </div>
+
     </div>
+</div>
 </body>
 </html>
