@@ -30,15 +30,15 @@ engine = create_async_engine(
 )
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
-bot = None
-# Initialize Telegram Bot #TODO
-# bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
 # bot = None
-# if bot_token:
-#     bot = Bot(
-#         token=bot_token,
-#         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
-#     )
+# Initialize Telegram Bot
+bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+bot = None
+if bot_token:
+    bot = Bot(
+        token=bot_token,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+    )
 
 
 @current_app.task(bind=True)
@@ -57,7 +57,7 @@ async def async_process_pending_notifications():
     """Async implementation of process_pending_notifications."""
     if not bot:
         logger.error("Telegram bot not initialized - missing TELEGRAM_BOT_TOKEN")
-        # return {"error": "Bot not configured"} #TODO
+        return {"error": "Bot not configured"}
     
     logger.info("Processing pending notifications...")
     
@@ -176,13 +176,13 @@ async def send_price_drop_notification(
         
         keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons) if keyboard_buttons else None
         
-        # Send message #TODO
-        # sent_message = await bot.send_message(
-        #     chat_id=user.telegram_user_id,
-        #     text=message_text,
-        #     reply_markup=keyboard
-        # )
-        # return sent_message.message_id
+        # Send message
+        sent_message = await bot.send_message(
+            chat_id=user.telegram_user_id,
+            text=message_text,
+            reply_markup=keyboard
+        )
+        return sent_message.message_id
         mess_id = random.randint(1, 100000)
         logger.error(f"!!! Price drop notification sent to {user.telegram_user_id}. Message: {message_text}")
         return mess_id
@@ -222,13 +222,13 @@ async def send_price_threshold_notification(
         
         keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons) if keyboard_buttons else None
 
-        # Send message #TODO
-        # sent_message = await bot.send_message(
-        #     chat_id=user.telegram_user_id,
-        #     text=message_text,
-        #     reply_markup=keyboard
-        # )
-        # return sent_message.message_id
+        # Send message
+        sent_message = await bot.send_message(
+            chat_id=user.telegram_user_id,
+            text=message_text,
+            reply_markup=keyboard
+        )
+        return sent_message.message_id
         mess_id = random.randint(1, 100000)
         logger.error(f"!!! Price drop notification sent to {user.telegram_user_id}. Message: {message_text}")
         return mess_id
@@ -266,13 +266,13 @@ async def send_product_available_notification(
         
         keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons) if keyboard_buttons else None
         
-        # Send message #TODO
-        # sent_message = await bot.send_message(
-        #     chat_id=user.telegram_user_id,
-        #     text=message_text,
-        #     reply_markup=keyboard
-        # )
-        # return sent_message.message_id
+        # Send message
+        sent_message = await bot.send_message(
+            chat_id=user.telegram_user_id,
+            text=message_text,
+            reply_markup=keyboard
+        )
+        return sent_message.message_id
         mess_id = random.randint(1, 100000)
         logger.error(f"!!! Price drop notification sent to {user.telegram_user_id}. Message: {message_text}")
         return mess_id
@@ -292,12 +292,12 @@ async def send_error_notification(
         message_text += f"❌ Error: {notification.message}\n\n"
         message_text += "💡 <i>You may want to check your subscription or try again later.</i>"
         
-        # Send message #TODO
-        # sent_message = await bot.send_message(
-        #     chat_id=user.telegram_user_id,
-        #     text=message_text
-        # )
-        # return sent_message.message_id
+        # Send message
+        sent_message = await bot.send_message(
+            chat_id=user.telegram_user_id,
+            text=message_text
+        )
+        return sent_message.message_id
         mess_id = random.randint(1, 100000)
         logger.error(f"!!! Price drop notification sent to {user.telegram_user_id}. Message: {message_text}")
         return mess_id
@@ -332,12 +332,11 @@ async def async_send_notification_to_user(
     try:
         message_text = f"📢 <b>{title}</b>\n\n{message}"
 
-        # TODO
-        # sent_message = await bot.send_message(
-        #     chat_id=user_telegram_id,
-        #     text=message_text
-        # )
-        # return {"success": True, "message_id": sent_message.message_id}
+        sent_message = await bot.send_message(
+            chat_id=user_telegram_id,
+            text=message_text
+        )
+        return {"success": True, "message_id": sent_message.message_id}
         mess_id = random.randint(1, 100000)
         logger.error(f"!!! Price drop notification sent to {user_telegram_id}. Message: {message_text}")
         return {"success": True, "message_id": mess_id}
@@ -399,12 +398,11 @@ async def async_test_notification(user_telegram_id: int):
     try:
         message_text = "🧪 This is a test notification from SmartCatcher!\n\nIf you received this, notifications are working correctly."
 
-        # TODO
-        # sent_message = await bot.send_message(
-        #     chat_id=user_telegram_id,
-        #     text=message_text
-        # )
-        # return {"success": True, "message_id": sent_message.message_id}
+        sent_message = await bot.send_message(
+            chat_id=user_telegram_id,
+            text=message_text
+        )
+        return {"success": True, "message_id": sent_message.message_id}
         mess_id = random.randint(1, 100000)
         logger.error(f"!!! Price drop notification sent to {user_telegram_id}. Message: {message_text}")
         return {"success": True, "message_id": mess_id}
