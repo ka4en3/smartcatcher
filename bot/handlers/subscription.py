@@ -50,21 +50,21 @@ async def subscribe_command(
     if len(command_parts) < 2:
         help_text = "🔗 <b>Subscribe to Product</b>\n\n"
         help_text += "Please provide a product URL:\n"
-        help_text += "<code>/subscribe https://www.ebay.com/itm/123456789</code>\n\n"
+        help_text += "<code>/subscribe https://webscraper.io/test-sites/e-commerce/scroll/product/70</code></code>\n\n"
         help_text += "<b>Supported sites:</b>\n"
         help_text += "• eBay (ebay.com)\n"
         help_text += "• Etsy (etsy.com)\n"
         help_text += "• WebScraper.io test sites\n"
-        help_text += "• Demo URLs (demo://)"
+        help_text += "• Demo URLs (http://demo-server:8001/)"
 
         await message.answer(help_text)
         return
 
-    product_url = command_parts[1].strip()
+    product_url = command_parts[1].strip().lower()
 
     # Validate URL format
     url_pattern = r'https?://[^\s]+'
-    if not re.match(url_pattern, product_url) and not product_url.startswith("demo://"):
+    if not re.match(url_pattern, product_url) and not "demo-server" in product_url:
         await message.answer("❌ Invalid URL format. Please provide a valid HTTP/HTTPS URL.")
         return
 
