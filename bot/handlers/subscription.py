@@ -14,6 +14,14 @@ from utils.api_client import APIClient
 logger = logging.getLogger(__name__)
 router = Router()
 
+# Define allowed domains
+ALLOWED_DOMAINS = [
+    "ebay.com",
+    "etsy.com",
+    "webscraper.io",
+    "demo-server"
+]
+
 
 class SubscriptionStates(StatesGroup):
     """Subscription states."""
@@ -22,11 +30,11 @@ class SubscriptionStates(StatesGroup):
 
 @router.message(Command("subscribe"))
 async def subscribe_command(
-    message: types.Message,
-    state: FSMContext,
-    api_client: APIClient,
-    access_token: str = None,
-    is_authenticated: bool = False
+        message: types.Message,
+        state: FSMContext,
+        api_client: APIClient,
+        access_token: str = None,
+        is_authenticated: bool = False
 ) -> None:
     """Handle /subscribe command."""
     if not is_authenticated or not access_token:
@@ -50,10 +58,19 @@ async def subscribe_command(
 
     product_url = command_parts[1].strip()
 
-    # Validate URL format
-    url_pattern = r'https?://[^\s]+'
-    if (not re.match(url_pattern, product_url)) and (not "demo-server" in product_url):
-        await message.answer("❌ Invalid URL format. Please provide a valid HTTP/HTTPS URL.")
+    # Check if URL contains any of the allowed domains
+    is_valid_domain = any(domain in product_url for domain in ALLOWED_DOMAINS)
+    # Basic syntax check
+    is_valid_url_format = re.match(r'https?://[^\s]+', product_url)
+    if not is_valid_url_format or not is_valid_domain:
+        await message.answer(
+            "❌ Invalid URL.\n\n"
+            "Supported sites:\n"
+            "• eBay\n"
+            "• Etsy\n"
+            "• WebScraper.io test sites\n"
+            "• Internal Demo Server (demo-server)"
+        )
         return
 
     # Store URL and token in state
@@ -71,9 +88,9 @@ async def subscribe_command(
 
 @router.message(SubscriptionStates.waiting_for_threshold)
 async def process_threshold(
-    message: types.Message,
-    state: FSMContext,
-    api_client: APIClient
+        message: types.Message,
+        state: FSMContext,
+        api_client: APIClient
 ) -> None:
     """Process price threshold."""
     try:
@@ -148,10 +165,10 @@ async def process_threshold(
 
 @router.message(Command("list"))
 async def list_subscriptions(
-    message: types.Message,
-    api_client: APIClient,
-    access_token: str = None,
-    is_authenticated: bool = False
+        message: types.Message,
+        api_client: APIClient,
+        access_token: str = None,
+        is_authenticated: bool = False
 ) -> None:
     """Handle /list command."""
     if not is_authenticated or not access_token:
@@ -227,10 +244,10 @@ async def list_subscriptions(
 
 @router.message(Command("unsubscribe"))
 async def unsubscribe_command(
-    message: types.Message,
-    api_client: APIClient,
-    access_token: str = None,
-    is_authenticated: bool = False
+        message: types.Message,
+        api_client: APIClient,
+        access_token: str = None,
+        is_authenticated: bool = False
 ) -> None:
     """Handle /unsubscribe command."""
     if not is_authenticated or not access_token:
@@ -279,10 +296,10 @@ async def unsubscribe_command(
 
 @router.callback_query(lambda c: c.data.startswith("unsubscribe_"))
 async def confirm_unsubscribe(
-    callback: types.CallbackQuery,
-    api_client: APIClient,
-    access_token: str = None,
-    is_authenticated: bool = False
+        callback: types.CallbackQuery,
+        api_client: APIClient,
+        access_token: str = None,
+        is_authenticated: bool = False
 ) -> None:
     """Handle unsubscribe confirmation."""
     if not is_authenticated or not access_token:
