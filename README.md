@@ -1,6 +1,6 @@
 # SmartCatcher: Discount & Coupon Aggregator Bot
 
-A production-ready service that allows users to subscribe to products/brands and receive price drop notifications. It also collects discounts/coupons through parsers/adapters and supports affiliate links.
+A comprehensive price monitoring and discount tracking system with Telegram bot integration, built with FastAPI, PostgreSQL, Redis, and Celery.
 
 ## 🏗️ Architecture
 
@@ -81,7 +81,7 @@ ETSY_API_KEY=your-etsy-api-key
 docker-compose up --build
 
 # Run in background
-docker-compose up -d --build
+docker-compose -f docker-compose.yml up -d --build (--force-recreate optional)
 ```
 
 ### 💻 Development Setup
@@ -150,7 +150,7 @@ python main.py
 ## 🕷️ Scrapers
 
 ### Currently Supported:
-1. **Demo Scraper**: Parses example HTML pages (for testing)
+1. **Demo Scraper**: Parses example HTML pages from demo server (for testing)
 2. **WebScraper.io**: Scrapes webscraper.io test sites
 3. **eBay API**: Uses official eBay Browse API
 4. **Etsy API**: Uses official Etsy Open API v3
@@ -227,7 +227,7 @@ curl -X POST http://localhost:8000/auth/login \
 curl -X POST http://localhost:8000/subscriptions \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"product_url": "https://www.ebay.com/itm/123456789", "price_threshold": 100.0}'
+  -d '{"product_url": "https://webscraper.io/test-sites/e-commerce/scroll/product/7", "price_threshold": 850.0}'
 ```
 
 ### Bot Interaction Example
@@ -238,31 +238,19 @@ Bot: Welcome! Please link your account or register:
      Link existing: /link your@email.com password
      New user: /register your@email.com password
 
-User: /subscribe https://www.ebay.com/itm/123456789
-Bot: ✅ Subscribed to iPhone 14 Pro Max
-     Current price: $999.99
-     You'll be notified if price drops below $950.00
+User: /subscribe https://webscraper.io/test-sites/e-commerce/scroll/product/7
+Bot: ✅ Subscribed to iPhone White
+     Current price: $899.99
+     You'll be notified if price drops below $850.00
 
 Bot: 🔔 Price Alert!
-     iPhone 14 Pro Max price dropped!
-     Was: $999.99 → Now: $899.99 (-$100.00)
-     Buy now: https://ebay.com/itm/123456789?affiliate=...
+     iPhone White price dropped!
+     Was: $899.99 → Now: $849.99 (-$50.00)
+     Buy now: https://webscraper.io/test-sites/e-commerce/scroll/product/7
 ```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests and linting
-5. Submit a pull request
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 📝 Changelog
-
-See CHANGELOG.md for version history and changes.
 
 ---
