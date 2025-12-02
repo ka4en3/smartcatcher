@@ -14,7 +14,7 @@ from app.core.exceptions import ValidationException, SubscriptionNotFoundExcepti
 router = APIRouter()
 
 
-@router.get("/", response_model=list[SubscriptionRead])
+@router.get("", response_model=list[SubscriptionRead])
 async def list_subscriptions(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
@@ -33,7 +33,7 @@ async def list_subscriptions(
     return [SubscriptionRead.model_validate(sub, from_attributes=True) for sub in subscriptions]
 
 
-@router.post("/", response_model=SubscriptionRead, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=SubscriptionRead, status_code=status.HTTP_201_CREATED)
 async def create_subscription(
     subscription_data: SubscriptionCreate,
     session: AsyncSession = Depends(get_session),
