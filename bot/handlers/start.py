@@ -245,7 +245,7 @@ async def help_command(message: types.Message) -> None:
     help_text += "• /list - Show your subscriptions\n"
     help_text += "• /unsubscribe [id] - Remove subscription\n\n"
     help_text += "<b>Example:</b>\n"
-    help_text += "<code>/subscribe https://www.ebay.com/itm/123456789</code>\n\n"
+    help_text += "<code>/subscribe https://webscraper.io/test-sites/e-commerce/scroll/product/70</code>\n\n"
     help_text += "💡 <i>You'll receive notifications when prices drop below your threshold!</i>"
 
     await message.answer(help_text)
